@@ -32,6 +32,7 @@ Basic usage:
 cdx /path/to/project
 cdx            # go to $HOME
 cdx -i /path   # inspect mode (no directory change)
+cdx -- /path   # stop flag parsing (treat next arg as path)
 ```
 
 Use `up` to go up multiple levels:
@@ -42,6 +43,18 @@ up 3      # three levels up
 up 2/src  # up two, then into src
 up -i 2   # inspect without changing directories
 ```
+
+### Options and Parameters
+
+`cdx`:
+- `-i`: inspect mode (do not change directories; hooks still run).
+- `--`: end of options; treat the next argument as a literal path.
+- `PATH`: optional target path; defaults to `$HOME`.
+
+`up`:
+- `-i`: inspect mode (delegates to `cdx -i`).
+- `N`: number of parent levels (default `1`).
+- `N/subpath`: go up `N` levels, then into `subpath`.
 
 ## Hooks
 
@@ -95,6 +108,12 @@ Example `config.sh`:
 # ~/.config/cdx/config.sh
 CDX_HOOKS_ENABLED=(preview git)
 ```
+
+### Configuration Variables
+
+- `CDX_CONFIG_DIR`: override config root (defaults to `~/.config/cdx`).
+- `CDX_HOOKS_ENABLED`: list of hook names to load (e.g., `preview git notify`).
+- `CDX_LS_ARGS`: arguments passed to `eza`/`exa`/`ls` in the preview hook.
 
 Per-directory config via `.cdxrc`:
 
