@@ -112,3 +112,25 @@ Run tests with the bundled Bats runner:
 ```bash
 ./tests/bats/bin/bats tests/ tests/hooks/
 ```
+
+## Shell Integration Examples
+
+### fzf + cdx (Bash)
+
+```bash
+cdxf() {
+  local dir
+  dir="$(find . -type d 2>/dev/null | fzf)"
+  [[ -n "$dir" ]] && cdx "$dir"
+}
+```
+
+### fzf + cdx (Zsh)
+
+```zsh
+cdxf() {
+  local dir
+  dir="$(find . -type d 2>/dev/null | fzf)"
+  [[ -n "$dir" ]] && cdx "$dir"
+}
+```
