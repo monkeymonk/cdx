@@ -18,6 +18,18 @@ What the installer does:
 
 To uninstall, remove the source line from your rc file and delete `~/.local/share/cdx/` and `~/.config/cdx/`.
 
+### Completions
+
+The installer enables completions when it detects standard shell completion directories. If you install manually, you can source one of the bundled completion files from your shell rc:
+
+```bash
+# bash
+source /path/to/cdx/completions/cdx.bash
+
+# zsh
+source /path/to/cdx/completions/cdx.zsh
+```
+
 ## Usage
 
 Load `cdx` into your shell (installer already does this):
