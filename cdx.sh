@@ -26,7 +26,7 @@ _cdx_dispatch() {
 
 cdx() {
   local inspect=0
-  local args=()
+  local -a args=()
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -36,10 +36,16 @@ cdx() {
     esac
   done
 
-  local target="${args[0]:-$HOME}"
+  local target="${args[1]:-${args[0]:-$HOME}}"
+  local resolved_target=""
+
+  if command -v zoxide &>/dev/null; then
+    resolved_target="$(zoxide query -l -- "$target" 2>/dev/null | head -n 1)"
+  fi
+  [[ -z "$resolved_target" ]] && resolved_target="$target"
 
   local resolved
-  resolved="$(builtin cd "$target" 2>/dev/null && pwd)" || {
+  resolved="$(builtin cd "$resolved_target" 2>/dev/null && pwd)" || {
     echo "cdx: no such directory: $target" >&2
     return 1
   }
@@ -57,9 +63,10 @@ cdx() {
   _cdx_dispatch "$mode" "$resolved"
 }
 
+unalias up 2>/dev/null || true
 up() {
   local inspect=0
-  local args=()
+  local -a args=()
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -68,15 +75,21 @@ up() {
     esac
   done
 
-  local spec="${args[0]:-}"
+  local spec="${args[1]:-${args[0]:-}}"
   local count=1
   local subpath=""
 
   if [[ -n "$spec" ]]; then
-    if [[ "$spec" =~ ^([0-9]+)(/(.*))?$ ]]; then
-      count="${BASH_REMATCH[1]}"
-      subpath="${BASH_REMATCH[3]:-}"
-    fi
+    local num="${spec%%/*}"
+    case "$num" in
+      ''|*[!0-9]*) ;;
+      *)
+        count="$num"
+        if [[ "$spec" == */* ]]; then
+          subpath="${spec#*/}"
+        fi
+        ;;
+    esac
   fi
 
   local target=""
