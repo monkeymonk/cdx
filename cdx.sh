@@ -24,6 +24,76 @@ _cdx_dispatch() {
   done
 }
 
+cdx() {
+  local inspect=0
+  local args=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -i) inspect=1; shift ;;
+      --) shift; args+=("$@"); break ;;
+      *)  args+=("$1"); shift ;;
+    esac
+  done
+
+  local target="${args[0]:-$HOME}"
+
+  local resolved
+  resolved="$(builtin cd "$target" 2>/dev/null && pwd)" || {
+    echo "cdx: no such directory: $target" >&2
+    return 1
+  }
+
+  local mode="enter"
+  if [[ $inspect -eq 1 ]]; then
+    mode="inspect"
+  else
+    builtin cd "$resolved" || return 1
+  fi
+
+  local cdxrc="$resolved/.cdxrc"
+  [[ -f "$cdxrc" ]] && source "$cdxrc"
+
+  _cdx_dispatch "$mode" "$resolved"
+}
+
+up() {
+  local inspect=0
+  local args=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -i) inspect=1; shift ;;
+      *)  args+=("$1"); shift ;;
+    esac
+  done
+
+  local spec="${args[0]:-}"
+  local count=1
+  local subpath=""
+
+  if [[ -n "$spec" ]]; then
+    if [[ "$spec" =~ ^([0-9]+)(/(.*))?$ ]]; then
+      count="${BASH_REMATCH[1]}"
+      subpath="${BASH_REMATCH[3]:-}"
+    fi
+  fi
+
+  local target=""
+  local i
+  for ((i = 0; i < count; i++)); do
+    target="../$target"
+  done
+  [[ -n "$subpath" ]] && target="${target}${subpath}"
+  [[ -z "$target" ]] && target=".."
+
+  if [[ $inspect -eq 1 ]]; then
+    cdx -i "$target"
+  else
+    cdx "$target"
+  fi
+}
+
 _cdx_init() {
   local config_dir="${CDX_CONFIG_DIR:-$HOME/.config/cdx}"
   local config="$config_dir/config.sh"

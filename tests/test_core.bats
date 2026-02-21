@@ -67,3 +67,68 @@ EOF
   # should return immediately before async hook finishes
   [ ! -f "$ASYNC_FILE" ]
 }
+
+@test "cdx changes to target directory" {
+  cdx /tmp
+  [ "$(pwd)" = "/tmp" ]
+}
+
+@test "cdx with no args goes to HOME" {
+  cdx /tmp
+  cdx
+  [ "$(pwd)" = "$HOME" ]
+}
+
+@test "cdx returns error for nonexistent directory" {
+  run cdx /nonexistent_path_xyz
+  assert_failure
+  assert_output --partial "cdx: no such directory"
+}
+
+@test "cdx dispatches enter mode to hooks" {
+  HOOK_MODE=""
+  cdx_hook_mode_check() { HOOK_MODE="$1"; }
+  cdx_register_hook sync cdx_hook_mode_check
+  cdx /tmp
+  [ "$HOOK_MODE" = "enter" ]
+}
+
+@test "cdx passes resolved absolute path to hooks" {
+  HOOK_DIR=""
+  cdx_hook_dir_check() { HOOK_DIR="$2"; }
+  cdx_register_hook sync cdx_hook_dir_check
+  cdx /tmp
+  [ "$HOOK_DIR" = "/tmp" ]
+}
+
+@test "cdx -i does not change directory" {
+  original="$(pwd)"
+  cdx -i /tmp
+  [ "$(pwd)" = "$original" ]
+}
+
+@test "cdx -i dispatches inspect mode to hooks" {
+  HOOK_MODE=""
+  cdx_hook_mode_check() { HOOK_MODE="$1"; }
+  cdx_register_hook sync cdx_hook_mode_check
+  cdx -i /tmp
+  [ "$HOOK_MODE" = "inspect" ]
+}
+
+@test "cdx sources .cdxrc in target directory" {
+  local tmpdir
+  tmpdir="$(mktemp -d)"
+  echo 'CDXRC_LOADED=1' > "$tmpdir/.cdxrc"
+  cdx "$tmpdir"
+  [ "$CDXRC_LOADED" = "1" ]
+  rm -rf "$tmpdir"
+}
+
+@test "cdx .cdxrc can override CDX_HOOKS_ENABLED" {
+  local tmpdir
+  tmpdir="$(mktemp -d)"
+  echo 'CDX_HOOKS_ENABLED=(extra)' > "$tmpdir/.cdxrc"
+  cdx "$tmpdir"
+  [[ " ${CDX_HOOKS_ENABLED[*]} " == *" extra "* ]]
+  rm -rf "$tmpdir"
+}
