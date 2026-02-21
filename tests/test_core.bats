@@ -40,3 +40,30 @@ EOF
   [ ${#__CDX_HOOKS_SYNC[@]} -eq 0 ]
   [ ${#__CDX_HOOKS_ASYNC[@]} -eq 0 ]
 }
+
+@test "_cdx_dispatch calls sync hooks with mode and dir" {
+  SYNC_HOOK_CALLED=""
+  cdx_hook_testable() { SYNC_HOOK_CALLED="$1:$2"; }
+  cdx_register_hook sync cdx_hook_testable
+  _cdx_dispatch enter /tmp
+  [ "$SYNC_HOOK_CALLED" = "enter:/tmp" ]
+}
+
+@test "_cdx_dispatch calls multiple sync hooks in order" {
+  ORDER=""
+  hook_a() { ORDER="${ORDER}a"; }
+  hook_b() { ORDER="${ORDER}b"; }
+  cdx_register_hook sync hook_a
+  cdx_register_hook sync hook_b
+  _cdx_dispatch enter /tmp
+  [ "$ORDER" = "ab" ]
+}
+
+@test "_cdx_dispatch fires async hooks without blocking" {
+  ASYNC_FILE="$BATS_TMPDIR/async_$$"
+  cdx_hook_async_test() { sleep 0.1; touch "$1"; }
+  cdx_register_hook async cdx_hook_async_test
+  _cdx_dispatch enter "$ASYNC_FILE"
+  # should return immediately before async hook finishes
+  [ ! -f "$ASYNC_FILE" ]
+}

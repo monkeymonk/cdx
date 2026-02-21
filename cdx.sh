@@ -13,6 +13,17 @@ cdx_register_hook() {
   esac
 }
 
+_cdx_dispatch() {
+  local mode="$1" dir="$2"
+  local fn
+  for fn in "${__CDX_HOOKS_SYNC[@]}"; do
+    "$fn" "$mode" "$dir"
+  done
+  for fn in "${__CDX_HOOKS_ASYNC[@]}"; do
+    ("$fn" "$mode" "$dir" &>/dev/null) &
+  done
+}
+
 _cdx_init() {
   local config_dir="${CDX_CONFIG_DIR:-$HOME/.config/cdx}"
   local config="$config_dir/config.sh"
