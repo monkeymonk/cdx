@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.1.4
+- Fix installer crash when `FPATH` is unset in bash.
+- Avoid zsh parse error when an `up` alias exists.
+- Cache-bust raw GitHub downloads in the installer.
+- Fix zsh argument indexing so `cdx` changes directories correctly.
+- Declare argument arrays in zsh so `cdx` and `up` parse args reliably.
+- Provide `cdx_up` helper and let users define their own `up` alias.
+
+## v0.1.3
+- Fix installer crash when `FPATH` is unset in bash.
+
 ## v0.1.2
 - Add MIT license, contribution guidelines, and repo editor attributes.
 - Add `--help` output for `cdx` and `up`, plus completions.
