@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.5
+- Install from the latest git tag when available (fallback to `main`).
+
 ## v0.1.4
 - Fix installer crash when `FPATH` is unset in bash.
 - Avoid zsh parse error when an `up` alias exists.
