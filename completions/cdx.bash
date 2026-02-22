@@ -13,7 +13,7 @@ _cdx_complete() {
   case "${COMP_WORDS[0]}" in
     up)
       if [[ "$cur" == -* ]]; then
-        COMPREPLY=($(compgen -W "-i" -- "$cur"))
+        COMPREPLY=($(compgen -W "-i -h --help" -- "$cur"))
         return
       fi
 
@@ -35,12 +35,12 @@ _cdx_complete() {
         return
       fi
 
-      COMPREPLY=($(compgen -W "-i $nums" -- "$cur"))
+      COMPREPLY=($(compgen -W "-i -h --help $nums" -- "$cur"))
       COMPREPLY+=($(compgen -d -- "$cur"))
       ;;
     cdx)
       if [[ "$cur" == -* ]]; then
-        COMPREPLY=($(compgen -W "-i" -- "$cur"))
+        COMPREPLY=($(compgen -W "-i -h --help" -- "$cur"))
         return
       fi
 
@@ -49,7 +49,7 @@ _cdx_complete() {
         return
       fi
 
-      COMPREPLY=($(compgen -W "-i" -- "$cur"))
+      COMPREPLY=($(compgen -W "-i -h --help" -- "$cur"))
       COMPREPLY+=($(compgen -d -- "$cur"))
       ;;
   esac

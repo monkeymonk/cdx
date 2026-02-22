@@ -4,6 +4,27 @@
 __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
 
+_cdx_usage() {
+  cat <<'USAGE'
+cdx — extensible cd wrapper
+
+Usage:
+  cdx [options] [dir]
+  cdx -i [dir]
+  up [options] [N[/subpath]]
+
+Options:
+  -i            Inspect mode (run hooks without changing directory)
+  -h, --help    Show this help message
+
+Examples:
+  cdx /tmp
+  cdx -i /tmp
+  up 2
+  up 3/projects
+USAGE
+}
+
 cdx_register_hook() {
   local type="$1" fn="$2"
   case "$type" in
@@ -31,6 +52,7 @@ cdx() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -i) inspect=1; shift ;;
+      -h|--help) _cdx_usage; return 0 ;;
       --) shift; args+=("$@"); break ;;
       *)  args+=("$1"); shift ;;
     esac
@@ -71,6 +93,7 @@ up() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -i) inspect=1; shift ;;
+      -h|--help) _cdx_usage; return 0 ;;
       *)  args+=("$1"); shift ;;
     esac
   done

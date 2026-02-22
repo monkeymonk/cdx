@@ -44,6 +44,7 @@ Basic usage:
 cdx /path/to/project
 cdx            # go to $HOME
 cdx -i /path   # inspect mode (no directory change)
+cdx --help     # show help
 cdx -- /path   # stop flag parsing (treat next arg as path)
 ```
 
@@ -54,17 +55,20 @@ up        # one level up
 up 3      # three levels up
 up 2/src  # up two, then into src
 up -i 2   # inspect without changing directories
+up --help # show help
 ```
 
 ### Options and Parameters
 
 `cdx`:
 - `-i`: inspect mode (do not change directories; hooks still run).
+- `-h`, `--help`: show help.
 - `--`: end of options; treat the next argument as a literal path.
 - `PATH`: optional target path; defaults to `$HOME`.
 
 `up`:
 - `-i`: inspect mode (delegates to `cdx -i`).
+- `-h`, `--help`: show help.
 - `N`: number of parent levels (default `1`).
 - `N/subpath`: go up `N` levels, then into `subpath`.
 
