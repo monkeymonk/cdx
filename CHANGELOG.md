@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.2
+- Add MIT license, contribution guidelines, and repo editor attributes.
+- Add `--help` output for `cdx` and `up`, plus completions.
+- Document help flags in the README.
+
 ## v0.1.1
 - Improve bash and zsh completion behavior for `cdx` and `up`, including `-i` support.
 - Document manual completion setup in the README.
