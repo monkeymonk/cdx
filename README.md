@@ -1,6 +1,6 @@
 # cdx
 
-`cdx` is a minimal, extensible wrapper around `cd` that dispatches lifecycle hooks when you enter a directory. It supports synchronous and asynchronous hooks, per-directory config via `.cdxrc`, and an `up` helper for climbing parent directories. If `zoxide` is installed, `cdx` uses it to resolve targets before falling back to a normal `cd`.
+`cdx` is a minimal, extensible wrapper around `cd` that dispatches lifecycle hooks when you enter a directory. It supports synchronous and asynchronous hooks, per-directory config via `.cdxrc`, and a `cdx_up` helper for climbing parent directories. If `zoxide` is installed, `cdx` uses it to resolve targets before falling back to a normal `cd`.
 
 ## Install
 
@@ -48,7 +48,16 @@ cdx --help     # show help
 cdx -- /path   # stop flag parsing (treat next arg as path)
 ```
 
-Use `up` to go up multiple levels:
+Define aliases for `cdx_up` (recommended):
+
+```bash
+alias up='cdx_up'
+alias ..='cdx_up 2'
+alias ...='cdx_up 3'
+alias ....='cdx_up 4'
+```
+
+Then use `up` to go up multiple levels:
 
 ```bash
 up        # one level up
@@ -66,7 +75,7 @@ up --help # show help
 - `--`: end of options; treat the next argument as a literal path.
 - `PATH`: optional target path; defaults to `$HOME`.
 
-`up`:
+`cdx_up` (or your `up` alias):
 - `-i`: inspect mode (delegates to `cdx -i`).
 - `-h`, `--help`: show help.
 - `N`: number of parent levels (default `1`).

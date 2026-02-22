@@ -85,8 +85,7 @@ cdx() {
   _cdx_dispatch "$mode" "$resolved"
 }
 
-unalias up 2>/dev/null || true
-up() {
+cdx_up() {
   local inspect=0
   local -a args=()
 
