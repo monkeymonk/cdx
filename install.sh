@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CDX_REPO="https://raw.githubusercontent.com/monkeymonk/cdx/main"
+CDX_REPO="https://raw.githubusercontent.com/monkeymonk/cdx"
 CDX_DATA="${XDG_DATA_HOME:-$HOME/.local/share}/cdx"
 CDX_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/cdx"
+CDX_TAG=""
 
 _detect_shell_rc() {
   if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$SHELL" == */zsh ]]; then
@@ -28,6 +29,17 @@ _download() {
   fi
 }
 
+_latest_tag() {
+  local api="https://api.github.com/repos/monkeymonk/cdx/tags?per_page=1"
+  if command -v curl &>/dev/null; then
+    curl -fsSL "$api" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]\+\)".*/\1/p' | head -n1
+  elif command -v wget &>/dev/null; then
+    wget -qO - "$api" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]\+\)".*/\1/p' | head -n1
+  else
+    return 1
+  fi
+}
+
 _patch_rc() {
   local rc="$1"
   local line="source \"$CDX_DATA/cdx.sh\""
@@ -46,10 +58,19 @@ echo "Installing cdx..."
 mkdir -p "$CDX_DATA"
 mkdir -p "$CDX_CONFIG/hooks"
 
-_download "$CDX_REPO/cdx.sh" "$CDX_DATA/cdx.sh"
+CDX_TAG="$(_latest_tag || true)"
+if [[ -n "$CDX_TAG" ]]; then
+  CDX_BASE="$CDX_REPO/$CDX_TAG"
+  echo "cdx: using latest tag $CDX_TAG"
+else
+  CDX_BASE="$CDX_REPO/main"
+  echo "cdx: could not determine latest tag, using main"
+fi
+
+_download "$CDX_BASE/cdx.sh" "$CDX_DATA/cdx.sh"
 
 for hook in preview git notify docker; do
-  _download "$CDX_REPO/hooks/${hook}.sh" "$CDX_CONFIG/hooks/${hook}.sh"
+  _download "$CDX_BASE/hooks/${hook}.sh" "$CDX_CONFIG/hooks/${hook}.sh"
 done
 
 if [[ ! -f "$CDX_CONFIG/config.sh" ]]; then
@@ -69,9 +90,9 @@ if [[ -n "${FPATH+x}" ]]; then
   FPATH_FIRST="${FPATH%%:*}"
 fi
 if [[ "$SHELL_RC" == *zshrc* ]] && [[ -n "$FPATH_FIRST" ]] && [[ -d "$FPATH_FIRST" ]]; then
-  _download "$CDX_REPO/completions/cdx.zsh" "$FPATH_FIRST/_cdx"
+  _download "$CDX_BASE/completions/cdx.zsh" "$FPATH_FIRST/_cdx"
 elif [[ -d "$HOME/.local/share/bash-completion/completions" ]]; then
-  _download "$CDX_REPO/completions/cdx.bash" \
+  _download "$CDX_BASE/completions/cdx.bash" \
     "$HOME/.local/share/bash-completion/completions/cdx"
 fi
 
