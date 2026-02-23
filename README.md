@@ -45,6 +45,7 @@ cdx /path/to/project
 cdx            # go to $HOME
 cdx -i /path   # inspect mode (no directory change)
 cdx --help     # show help
+cdx --version  # show version
 cdx -- /path   # stop flag parsing (treat next arg as path)
 ```
 
@@ -72,6 +73,7 @@ up --help # show help
 `cdx`:
 - `-i`: inspect mode (do not change directories; hooks still run).
 - `-h`, `--help`: show help.
+- `-v`, `--version`: show version.
 - `--`: end of options; treat the next argument as a literal path.
 - `PATH`: optional target path; defaults to `$HOME`.
 

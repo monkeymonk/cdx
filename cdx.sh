@@ -3,11 +3,11 @@
 
 __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
+__CDX_VERSION="0.1.6"
 
 _cdx_usage() {
+  printf "cdx — extensible cd wrapper\nVersion: v%s\n" "$__CDX_VERSION"
   cat <<'USAGE'
-cdx — extensible cd wrapper
-
 Usage:
   cdx [options] [dir]
   cdx -i [dir]
@@ -16,6 +16,7 @@ Usage:
 Options:
   -i            Inspect mode (run hooks without changing directory)
   -h, --help    Show this help message
+  -v, --version Show the cdx version
 
 Examples:
   cdx /tmp
@@ -25,11 +26,19 @@ Examples:
 USAGE
 }
 
+_cdx_version() {
+  printf "cdx v%s\n" "$__CDX_VERSION"
+}
+
 cdx_register_hook() {
   local type="$1" fn="$2"
   case "$type" in
-    sync)  __CDX_HOOKS_SYNC+=("$fn") ;;
-    async) __CDX_HOOKS_ASYNC+=("$fn") ;;
+    sync)
+      [[ " ${__CDX_HOOKS_SYNC[*]} " == *" $fn "* ]] && return 0
+      __CDX_HOOKS_SYNC+=("$fn") ;;
+    async)
+      [[ " ${__CDX_HOOKS_ASYNC[*]} " == *" $fn "* ]] && return 0
+      __CDX_HOOKS_ASYNC+=("$fn") ;;
     *)     echo "cdx: unknown hook type: $type" >&2; return 1 ;;
   esac
 }
@@ -53,6 +62,7 @@ cdx() {
     case "$1" in
       -i) inspect=1; shift ;;
       -h|--help) _cdx_usage; return 0 ;;
+      -v|--version) _cdx_version; return 0 ;;
       --) shift; args+=("$@"); break ;;
       *)  args+=("$1"); shift ;;
     esac
@@ -93,6 +103,7 @@ cdx_up() {
     case "$1" in
       -i) inspect=1; shift ;;
       -h|--help) _cdx_usage; return 0 ;;
+      -v|--version) _cdx_version; return 0 ;;
       *)  args+=("$1"); shift ;;
     esac
   done

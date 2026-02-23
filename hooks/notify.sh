@@ -2,7 +2,7 @@
 
 cdx_hook_notify() {
   local mode="$1" dir="$2"
-  [[ "$mode" = "enter" ]] || return 0
+  [[ "$mode" = "enter" ]] || return 0  # enter only — notification not useful in inspect mode
   command -v notify-send &>/dev/null || return 0
   notify-send "cdx" "Entered: $dir" --expire-time=2000 &>/dev/null
 }
