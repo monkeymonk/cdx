@@ -132,3 +132,39 @@ EOF
   [[ " ${CDX_HOOKS_ENABLED[*]} " == *" extra "* ]]
   rm -rf "$tmpdir"
 }
+
+@test "cdx_register_hook deduplicates sync: calling twice registers once" {
+  cdx_hook_dedup_sync() { :; }
+  cdx_register_hook sync cdx_hook_dedup_sync
+  cdx_register_hook sync cdx_hook_dedup_sync
+  local count=0 fn
+  for fn in "${__CDX_HOOKS_SYNC[@]}"; do
+    [[ "$fn" == "cdx_hook_dedup_sync" ]] && count=$(( count + 1 ))
+  done
+  [ "$count" -eq 1 ]
+}
+
+@test "cdx_register_hook deduplicates async: calling twice registers once" {
+  cdx_hook_dedup_async() { :; }
+  cdx_register_hook async cdx_hook_dedup_async
+  cdx_register_hook async cdx_hook_dedup_async
+  local count=0 fn
+  for fn in "${__CDX_HOOKS_ASYNC[@]}"; do
+    [[ "$fn" == "cdx_hook_dedup_async" ]] && count=$(( count + 1 ))
+  done
+  [ "$count" -eq 1 ]
+}
+
+@test "CDX_HOOKS_ENABLED with duplicate entry registers hook only once" {
+  echo 'CDX_HOOKS_ENABLED=(myhook myhook)' > "$CDX_CONFIG_DIR/config.sh"
+  cat > "$CDX_CONFIG_DIR/hooks/myhook.sh" <<'EOF'
+cdx_hook_myhook() { :; }
+cdx_register_hook sync cdx_hook_myhook
+EOF
+  _cdx_init
+  local count=0 fn
+  for fn in "${__CDX_HOOKS_SYNC[@]}"; do
+    [[ "$fn" == "cdx_hook_myhook" ]] && count=$(( count + 1 ))
+  done
+  [ "$count" -eq 1 ]
+}

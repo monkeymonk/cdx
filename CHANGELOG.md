@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.6
+- Deduplicate hook registration: `cdx_register_hook` skips if the function is already registered, preventing double-execution on re-source or duplicate `CDX_HOOKS_ENABLED` entries.
+- Add mode guard to `docker` hook: context switching now skipped in inspect mode.
+- Use `jq` for GitHub API JSON parsing in installer when available, falling back to `sed`.
+- Add `-v`/`--version` to completions for `cdx` and `up` (bash and zsh).
+- Fix version string in `--help` output to use a single source of truth.
+- Document mode-intent in all built-in hook files.
+
 ## v0.1.5
 - Install from the latest git tag when available (fallback to `main`).
 

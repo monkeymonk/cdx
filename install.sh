@@ -31,12 +31,18 @@ _download() {
 
 _latest_tag() {
   local api="https://api.github.com/repos/monkeymonk/cdx/tags?per_page=1"
+  local raw
   if command -v curl &>/dev/null; then
-    curl -fsSL "$api" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]\+\)".*/\1/p' | head -n1
+    raw="$(curl -fsSL "$api")"
   elif command -v wget &>/dev/null; then
-    wget -qO - "$api" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]\+\)".*/\1/p' | head -n1
+    raw="$(wget -qO - "$api")"
   else
     return 1
+  fi
+  if command -v jq &>/dev/null; then
+    printf '%s' "$raw" | jq -r '.[0].name // empty'
+  else
+    printf '%s' "$raw" | sed -n 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]\+\)".*/\1/p' | head -n1
   fi
 }
 

@@ -4,6 +4,7 @@ _cdx() {
   _arguments \
     '-i[inspect mode — preview without changing directory]' \
     '(-h --help)'{-h,--help}'[show help]' \
+    '(-v --version)'{-v,--version}'[show version]' \
     '1:directory:_directories'
 }
 
@@ -40,6 +41,7 @@ _up() {
   _arguments \
     '-i[inspect mode]' \
     '(-h --help)'{-h,--help}'[show help]' \
+    '(-v --version)'{-v,--version}'[show version]' \
     '1:level[/subpath]:->target'
 
   case "$state" in
