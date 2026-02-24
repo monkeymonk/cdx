@@ -11,18 +11,25 @@ _cdx_usage() {
 Usage:
   cdx [options] [dir]
   cdx -i [dir]
-  up [options] [N[/subpath]]
+  cdx --up [N[/subpath]]
+  cdx -N[/subpath]
 
 Options:
   -i            Inspect mode (run hooks without changing directory)
+  --up [N]      Go up N parent levels (default: 1)
+  -N            Shorthand for --up N (e.g. -3, -2/src)
   -h, --help    Show this help message
   -v, --version Show the cdx version
 
 Examples:
   cdx /tmp
   cdx -i /tmp
-  up 2
-  up 3/projects
+  cdx --up
+  cdx --up 2
+  cdx --up 2/src
+  cdx -3
+  cdx -2/src
+  cdx -- /path
 USAGE
 }
 
@@ -56,11 +63,23 @@ _cdx_dispatch() {
 
 cdx() {
   local inspect=0
+  local up_mode=0
+  local up_spec=""
   local -a args=()
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -i) inspect=1; shift ;;
+      --up)
+        up_mode=1
+        if [[ "${2-}" =~ ^[0-9] ]]; then
+          up_spec="$2"; shift
+        fi
+        shift ;;
+      -[0-9]*)
+        up_mode=1
+        up_spec="${1#-}"
+        shift ;;
       -h|--help) _cdx_usage; return 0 ;;
       -v|--version) _cdx_version; return 0 ;;
       --) shift; args+=("$@"); break ;;
@@ -68,7 +87,31 @@ cdx() {
     esac
   done
 
-  local target="${args[1]:-${args[0]:-$HOME}}"
+  if [[ $up_mode -eq 1 ]]; then
+    local count=1 subpath=""
+    if [[ -n "$up_spec" ]]; then
+      local num="${up_spec%%/*}"
+      if [[ "$num" =~ ^[0-9]+$ ]]; then
+        count="$num"
+        [[ "$up_spec" == */* ]] && subpath="${up_spec#*/}"
+      fi
+    fi
+    local target=""
+    local i
+    local loops=$count
+    [[ -n "$subpath" ]] && loops=$(( count + 1 ))
+    for ((i = 0; i < loops; i++)); do target="../$target"; done
+    [[ -n "$subpath" ]] && target="${target}${subpath}"
+    [[ -z "$target" ]] && target=".."
+    if [[ $inspect -eq 1 ]]; then
+      cdx -i "$target"
+    else
+      cdx "$target"
+    fi
+    return
+  fi
+
+  local target="${args[0]:-$HOME}"
   local resolved_target=""
 
   if command -v zoxide &>/dev/null; then
@@ -93,51 +136,6 @@ cdx() {
   [[ -f "$cdxrc" ]] && source "$cdxrc"
 
   _cdx_dispatch "$mode" "$resolved"
-}
-
-cdx_up() {
-  local inspect=0
-  local -a args=()
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      -i) inspect=1; shift ;;
-      -h|--help) _cdx_usage; return 0 ;;
-      -v|--version) _cdx_version; return 0 ;;
-      *)  args+=("$1"); shift ;;
-    esac
-  done
-
-  local spec="${args[1]:-${args[0]:-}}"
-  local count=1
-  local subpath=""
-
-  if [[ -n "$spec" ]]; then
-    local num="${spec%%/*}"
-    case "$num" in
-      ''|*[!0-9]*) ;;
-      *)
-        count="$num"
-        if [[ "$spec" == */* ]]; then
-          subpath="${spec#*/}"
-        fi
-        ;;
-    esac
-  fi
-
-  local target=""
-  local i
-  for ((i = 0; i < count; i++)); do
-    target="../$target"
-  done
-  [[ -n "$subpath" ]] && target="${target}${subpath}"
-  [[ -z "$target" ]] && target=".."
-
-  if [[ $inspect -eq 1 ]]; then
-    cdx -i "$target"
-  else
-    cdx "$target"
-  fi
 }
 
 _cdx_init() {
