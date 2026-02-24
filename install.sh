@@ -2,7 +2,7 @@
 set -euo pipefail
 
 CDX_REPO="https://raw.githubusercontent.com/monkeymonk/cdx"
-CDX_DATA="${XDG_DATA_HOME:-$HOME/.local/share}/cdx"
+CDX_BIN="${HOME}/.local/bin"
 CDX_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/cdx"
 CDX_TAG=""
 
@@ -48,20 +48,29 @@ _latest_tag() {
 
 _patch_rc() {
   local rc="$1"
-  local line="source \"$CDX_DATA/cdx.sh\""
-  if grep -qF "$line" "$rc" 2>/dev/null; then
+  local new_line="source \"$HOME/.local/bin/cdx.sh\""
+  local legacy_line="source \"${XDG_DATA_HOME:-$HOME/.local/share}/cdx/cdx.sh\""
+
+  # Migrate legacy source line if present
+  if grep -qF "$legacy_line" "$rc" 2>/dev/null; then
+    sed -i "s|$legacy_line|$new_line|" "$rc"
+    echo "cdx: updated source line in $rc (migrated from old path)"
+    return
+  fi
+
+  if grep -qF "$new_line" "$rc" 2>/dev/null; then
     echo "cdx: already sourced in $rc"
   else
     echo "" >> "$rc"
     echo "# cdx — extensible cd wrapper" >> "$rc"
-    echo "$line" >> "$rc"
+    echo "$new_line" >> "$rc"
     echo "cdx: added source line to $rc"
   fi
 }
 
 echo "Installing cdx..."
 
-mkdir -p "$CDX_DATA"
+mkdir -p "$CDX_BIN"
 mkdir -p "$CDX_CONFIG/hooks"
 
 CDX_TAG="$(_latest_tag || true)"
@@ -73,7 +82,7 @@ else
   echo "cdx: could not determine latest tag, using main"
 fi
 
-_download "$CDX_BASE/cdx.sh" "$CDX_DATA/cdx.sh"
+_download "$CDX_BASE/cdx.sh" "$CDX_BIN/cdx.sh"
 
 for hook in preview git notify docker; do
   _download "$CDX_BASE/hooks/${hook}.sh" "$CDX_CONFIG/hooks/${hook}.sh"
