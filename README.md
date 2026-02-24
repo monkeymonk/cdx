@@ -1,6 +1,6 @@
 # cdx
 
-`cdx` is a minimal, extensible wrapper around `cd` that dispatches lifecycle hooks when you enter a directory. It supports synchronous and asynchronous hooks, per-directory config via `.cdxrc`, and a `cdx_up` helper for climbing parent directories. If `zoxide` is installed, `cdx` uses it to resolve targets before falling back to a normal `cd`.
+`cdx` is a minimal, extensible wrapper around `cd` that dispatches lifecycle hooks when you enter a directory. It supports synchronous and asynchronous hooks, per-directory config via `.cdxrc`, and `--up` / `-N` shorthand for climbing parent directories. If `zoxide` is installed, `cdx` uses it to resolve targets before falling back to a normal `cd`.
 
 ## Install
 
@@ -49,23 +49,24 @@ cdx --version  # show version
 cdx -- /path   # stop flag parsing (treat next arg as path)
 ```
 
-Define aliases for `cdx_up` (recommended):
+Go up parent directories with `--up` or the `-N` shorthand:
 
 ```bash
-alias up='cdx_up'
-alias ..='cdx_up 2'
-alias ...='cdx_up 3'
-alias ....='cdx_up 4'
+cdx --up          # go up 1 level
+cdx --up 3        # go up 3 levels
+cdx --up 2/src    # go up 2 levels, then into src/
+cdx -1            # shorthand: up 1 level
+cdx -3            # shorthand: up 3 levels
+cdx -2/src        # shorthand: up 2 levels, then into src/
+cdx -i --up 2     # inspect mode, up 2 levels
 ```
 
-Then use `up` to go up multiple levels:
+Recommended shell aliases:
 
 ```bash
-up        # one level up
-up 3      # three levels up
-up 2/src  # up two, then into src
-up -i 2   # inspect without changing directories
-up --help # show help
+alias ..='cdx --up'
+alias ...='cdx --up 2'
+alias ....='cdx --up 3'
 ```
 
 ### Options and Parameters
@@ -77,11 +78,10 @@ up --help # show help
 - `--`: end of options; treat the next argument as a literal path.
 - `PATH`: optional target path; defaults to `$HOME`.
 
-`cdx_up` (or your `up` alias):
-- `-i`: inspect mode (delegates to `cdx -i`).
-- `-h`, `--help`: show help.
-- `N`: number of parent levels (default `1`).
-- `N/subpath`: go up `N` levels, then into `subpath`.
+`cdx --up` / `cdx -N`:
+- `--up [N[/subpath]]`: go up N parent levels (default 1), optionally into subpath.
+- `-N[/subpath]`: shorthand, e.g. `cdx -2/src`.
+- `-i`: inspect mode.
 
 ## Hooks
 
