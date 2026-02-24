@@ -23,8 +23,8 @@ teardown() {
 }
 
 @test "cdx --up N/subpath goes N levels up then into subpath" {
-  cdx --up 2/a
-  [ "$(pwd)" = "/tmp/a" ]
+  cdx --up 2/b
+  [ "$(pwd)" = "/tmp/a/b" ]
 }
 
 @test "cdx -i --up does not change directory" {
@@ -52,8 +52,8 @@ teardown() {
 }
 
 @test "cdx -N/subpath shorthand goes N levels up then into subpath" {
-  cdx -2/a
-  [ "$(pwd)" = "/tmp/a" ]
+  cdx -2/b
+  [ "$(pwd)" = "/tmp/a/b" ]
 }
 
 @test "cdx -i -N shorthand does not change directory" {

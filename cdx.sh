@@ -3,7 +3,7 @@
 
 __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
-__CDX_VERSION="0.2.0"
+__CDX_VERSION="0.2.1"
 
 _cdx_usage() {
   printf "cdx — extensible cd wrapper\nVersion: v%s\n" "$__CDX_VERSION"
@@ -65,25 +65,27 @@ cdx() {
   local inspect=0
   local up_mode=0
   local up_spec=""
-  local -a args=()
+  local dir=""
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       -i) inspect=1; shift ;;
       --up)
         up_mode=1
-        if [[ "${2-}" =~ ^[0-9] ]]; then
-          up_spec="$2"; shift
-        fi
-        shift ;;
-      -[0-9]*)
-        up_mode=1
-        up_spec="${1#-}"
+        case "${2-}" in [0-9]*) up_spec="$2"; shift ;; esac
         shift ;;
       -h|--help) _cdx_usage; return 0 ;;
       -v|--version) _cdx_version; return 0 ;;
-      --) shift; args+=("$@"); break ;;
-      *)  args+=("$1"); shift ;;
+      --) shift; dir="${1-}"; break ;;
+      -[0-9]*) up_mode=1; up_spec="${1#-}"; shift ;;
+      -*)
+        # zsh may not match -[0-9]* above; check second char without character class
+        case "${1:1:1}" in
+          0|1|2|3|4|5|6|7|8|9) up_mode=1; up_spec="${1#-}" ;;
+          *) dir="${dir:-$1}" ;;
+        esac
+        shift ;;
+      *)  dir="${dir:-$1}"; shift ;;
     esac
   done
 
@@ -91,7 +93,7 @@ cdx() {
     local count=1 subpath=""
     if [[ -n "$up_spec" ]]; then
       local num="${up_spec%%/*}"
-      if [[ "$num" =~ ^[0-9]+$ ]]; then
+      if [[ -n "$num" ]] && (( num > 0 )) 2>/dev/null; then
         count="$num"
         [[ "$up_spec" == */* ]] && subpath="${up_spec#*/}"
       fi
@@ -99,7 +101,6 @@ cdx() {
     local target=""
     local i
     local loops=$count
-    [[ -n "$subpath" ]] && loops=$(( count + 1 ))
     for ((i = 0; i < loops; i++)); do target="../$target"; done
     [[ -n "$subpath" ]] && target="${target}${subpath}"
     [[ -z "$target" ]] && target=".."
@@ -111,7 +112,7 @@ cdx() {
     return
   fi
 
-  local target="${args[0]:-$HOME}"
+  local target="${dir:-$HOME}"
   local resolved_target=""
 
   if [[ ! -d "$target" ]] && command -v zoxide &>/dev/null; then
@@ -128,6 +129,7 @@ cdx() {
   local mode="enter"
   if [[ $inspect -eq 1 ]]; then
     mode="inspect"
+    echo "$resolved"
   else
     builtin cd "$resolved" || return 1
   fi
