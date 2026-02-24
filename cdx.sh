@@ -3,7 +3,7 @@
 
 __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
-__CDX_VERSION="0.1.6"
+__CDX_VERSION="0.2.0"
 
 _cdx_usage() {
   printf "cdx — extensible cd wrapper\nVersion: v%s\n" "$__CDX_VERSION"
@@ -114,8 +114,8 @@ cdx() {
   local target="${args[0]:-$HOME}"
   local resolved_target=""
 
-  if command -v zoxide &>/dev/null; then
-    resolved_target="$(zoxide query -l -- "$target" 2>/dev/null | head -n 1)"
+  if [[ ! -d "$target" ]] && command -v zoxide &>/dev/null; then
+    resolved_target="$(zoxide query -- "$target" 2>/dev/null)"
   fi
   [[ -z "$resolved_target" ]] && resolved_target="$target"
 

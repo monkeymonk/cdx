@@ -12,31 +12,52 @@ teardown() {
   rm -rf /tmp/a
 }
 
-@test "up goes one level up" {
-  up
+@test "cdx --up goes one level up" {
+  cdx --up
   [ "$(pwd)" = "/tmp/a/b" ]
 }
 
-@test "up N goes N levels up" {
-  up 3
+@test "cdx --up N goes N levels up" {
+  cdx --up 3
   [ "$(pwd)" = "/tmp" ]
 }
 
-@test "up N/subpath goes N levels up then into subpath" {
-  up 2/a
+@test "cdx --up N/subpath goes N levels up then into subpath" {
+  cdx --up 2/a
   [ "$(pwd)" = "/tmp/a" ]
 }
 
-@test "up -i does not change directory" {
+@test "cdx -i --up does not change directory" {
   original="$(pwd)"
-  up -i 2
+  cdx -i --up 2
   [ "$(pwd)" = "$original" ]
 }
 
-@test "up -i dispatches inspect mode" {
+@test "cdx -i --up dispatches inspect mode" {
   HOOK_MODE=""
   cdx_hook_mode_check() { HOOK_MODE="$1"; }
   cdx_register_hook sync cdx_hook_mode_check
-  up -i 1
+  cdx -i --up 1
   [ "$HOOK_MODE" = "inspect" ]
+}
+
+@test "cdx -N shorthand goes N levels up" {
+  cdx -3
+  [ "$(pwd)" = "/tmp" ]
+}
+
+@test "cdx -1 shorthand goes one level up" {
+  cdx -1
+  [ "$(pwd)" = "/tmp/a/b" ]
+}
+
+@test "cdx -N/subpath shorthand goes N levels up then into subpath" {
+  cdx -2/a
+  [ "$(pwd)" = "/tmp/a" ]
+}
+
+@test "cdx -i -N shorthand does not change directory" {
+  original="$(pwd)"
+  cdx -i -2
+  [ "$(pwd)" = "$original" ]
 }
