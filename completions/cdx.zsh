@@ -1,24 +1,16 @@
-#compdef cdx up
+#compdef cdx
 
-_cdx() {
-  _arguments \
-    '-i[inspect mode — preview without changing directory]' \
-    '(-h --help)'{-h,--help}'[show help]' \
-    '(-v --version)'{-v,--version}'[show version]' \
-    '1:directory:_directories'
-}
-
-_up_levels() {
+_cdx_up_levels() {
   compadd -Q -- {1..9}
 }
 
-_up_level_or_dir() {
+_cdx_up_level_or_dir() {
   _alternative \
-    'levels:level:_up_levels' \
+    'levels:level:_cdx_up_levels' \
     'dirs:directory:_directories'
 }
 
-_up_subpath() {
+_cdx_up_subpath() {
   local cur="${words[$CURRENT]}"
   local num="${cur%%/*}"
   local rest="${cur#*/}"
@@ -37,25 +29,23 @@ _up_subpath() {
   compadd -Q -- $dirs
 }
 
-_up() {
+_cdx() {
   _arguments \
-    '-i[inspect mode]' \
+    '-i[inspect mode — preview without changing directory]' \
+    '--up[go up N parent levels]:level[/subpath]:->up_target' \
     '(-h --help)'{-h,--help}'[show help]' \
     '(-v --version)'{-v,--version}'[show version]' \
-    '1:level[/subpath]:->target'
+    '1:directory:_directories'
 
   case "$state" in
-    target)
+    up_target)
       if [[ "${words[$CURRENT]}" == <->/* ]]; then
-        _up_subpath
+        _cdx_up_subpath
       else
-        _up_level_or_dir
+        _cdx_up_level_or_dir
       fi
       ;;
   esac
 }
 
-case "$service" in
-  cdx) _cdx ;;
-  up)  _up ;;
-esac
+_cdx
