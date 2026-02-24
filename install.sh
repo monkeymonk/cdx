@@ -46,6 +46,14 @@ _latest_tag() {
   fi
 }
 
+_confirm() {
+  local prompt="$1"
+  local reply
+  printf '%s [y/N] ' "$prompt" >&2
+  read -r reply </dev/tty
+  [[ "$reply" =~ ^[Yy]$ ]]
+}
+
 _patch_rc() {
   local rc="$1"
   local new_line="source \"$HOME/.local/bin/cdx.sh\""
@@ -53,18 +61,24 @@ _patch_rc() {
 
   # Migrate legacy source line if present
   if grep -qF "$legacy_line" "$rc" 2>/dev/null; then
-    sed -i "s|$legacy_line|$new_line|" "$rc"
-    echo "cdx: updated source line in $rc (migrated from old path)"
+    if _confirm "cdx: migrate old source line in $rc?"; then
+      sed -i "s|$legacy_line|$new_line|" "$rc"
+      echo "cdx: updated source line in $rc (migrated from old path)"
+    else
+      echo "cdx: skipped migration of $rc"
+    fi
     return
   fi
 
   if grep -qF "$new_line" "$rc" 2>/dev/null; then
     echo "cdx: already sourced in $rc"
   else
-    echo "" >> "$rc"
-    echo "# cdx — extensible cd wrapper" >> "$rc"
-    echo "$new_line" >> "$rc"
-    echo "cdx: added source line to $rc"
+    if _confirm "cdx: append source line to $rc?"; then
+      printf '\n# cdx — extensible cd wrapper\n%s\n' "$new_line" >> "$rc"
+      echo "cdx: added source line to $rc"
+    else
+      echo "cdx: skipped $rc — add manually: $new_line"
+    fi
   fi
 }
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.1
+- Fix `-N` shorthand not matching in zsh when `EXTENDED_GLOB` or similar options are active; use regex pre-check instead of `case` pattern.
+- Inspect mode now prints the resolved target path before running hooks.
+
 ## v0.2.0
 - **Breaking:** Remove `cdx_up` function; navigate up with `cdx --up [N[/subpath]]` instead.
 - Add `-N[/subpath]` shorthand for going up N levels (e.g. `cdx -3`, `cdx -2/src`).
