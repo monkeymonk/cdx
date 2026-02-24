@@ -11,12 +11,12 @@ curl -fsSL https://raw.githubusercontent.com/monkeymonk/cdx/main/install.sh | ba
 ```
 
 What the installer does:
-- Installs `cdx.sh` to `~/.local/share/cdx/cdx.sh`.
+- Installs `cdx.sh` to `~/.local/bin/cdx.sh`.
 - Creates `~/.config/cdx/` with `config.sh` and `hooks/` (if missing).
-- Adds `source ~/.local/share/cdx/cdx.sh` to your shell rc file.
+- Adds `source ~/.local/bin/cdx.sh` to your shell rc file.
 - Installs completions if standard locations exist.
 
-To uninstall, remove the source line from your rc file and delete `~/.local/share/cdx/` and `~/.config/cdx/`.
+To uninstall, remove the source line from your rc file and delete `~/.local/bin/cdx.sh` and `~/.config/cdx/`.
 
 ### Completions
 
@@ -35,7 +35,7 @@ source /path/to/cdx/completions/cdx.zsh
 Load `cdx` into your shell (installer already does this):
 
 ```bash
-source ~/.local/share/cdx/cdx.sh
+source ~/.local/bin/cdx.sh
 ```
 
 Basic usage:
