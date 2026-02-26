@@ -15,9 +15,23 @@ _cdx_complete() {
     if [[ "$cur" =~ ^[0-9]+/ ]]; then
       local num="${cur%%/*}"
       local rest="${cur#*/}"
-      local partial_path
-      partial_path="$(printf '../%.0s' $(seq 1 "$num"))$rest"
-      COMPREPLY=($(compgen -d -- "$partial_path" | sed "s|^../*/|${num}/|"))
+      local prefix
+      prefix="$(printf '../%.0s' $(seq 1 "$num"))"
+      compopt -o nospace 2>/dev/null
+      COMPREPLY=()
+      while IFS= read -r d; do
+        [[ -n "$d" ]] && COMPREPLY+=("${num}/${d#"$prefix"}/")
+      done < <(compgen -d -- "${prefix}${rest}")
+      return
+    fi
+    if [[ "$cur" =~ ^[0-9]+$ ]]; then
+      local prefix
+      prefix="$(printf '../%.0s' $(seq 1 "$cur"))"
+      compopt -o nospace 2>/dev/null
+      COMPREPLY=()
+      while IFS= read -r d; do
+        [[ -n "$d" ]] && COMPREPLY+=("${cur}/${d#"$prefix"}/")
+      done < <(compgen -d -- "$prefix")
       return
     fi
     local nums
@@ -31,11 +45,21 @@ _cdx_complete() {
   if [[ "$cur" =~ ^-[0-9] ]]; then
     local num="${cur#-}"
     num="${num%%/*}"
+    local prefix
+    prefix="$(printf '../%.0s' $(seq 1 "$num"))"
     if [[ "$cur" == */* ]]; then
       local rest="${cur#*-${num}/}"
-      local partial_path
-      partial_path="$(printf '../%.0s' $(seq 1 "$num"))$rest"
-      COMPREPLY=($(compgen -d -- "$partial_path" | sed "s|^\.\./*/|${num}/|"))
+      compopt -o nospace 2>/dev/null
+      COMPREPLY=()
+      while IFS= read -r d; do
+        [[ -n "$d" ]] && COMPREPLY+=("-${num}/${d#"$prefix"}/")
+      done < <(compgen -d -- "${prefix}${rest}")
+    elif [[ "$cur" =~ ^-[0-9]+$ ]]; then
+      compopt -o nospace 2>/dev/null
+      COMPREPLY=()
+      while IFS= read -r d; do
+        [[ -n "$d" ]] && COMPREPLY+=("-${num}/${d#"$prefix"}/")
+      done < <(compgen -d -- "$prefix")
     else
       COMPREPLY=($(compgen -W "$(printf -- '-%s\n' {1..9})" -- "$cur"))
     fi
