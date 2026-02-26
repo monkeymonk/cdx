@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.2
+- Add VHS demo tape and GIF to showcase core features.
+- Add demo GIF to README.
+
 ## v0.2.1
 - Fix `-N` shorthand not matching in zsh when `EXTENDED_GLOB` or similar options are active; use regex pre-check instead of `case` pattern.
 - Inspect mode now prints the resolved target path before running hooks.
