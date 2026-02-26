@@ -2,6 +2,8 @@
 
 `cdx` is a minimal, extensible wrapper around `cd` that dispatches lifecycle hooks when you enter a directory. It supports synchronous and asynchronous hooks, per-directory config via `.cdxrc`, and `--up` / `-N` shorthand for climbing parent directories. If `zoxide` is installed, `cdx` uses it to resolve targets before falling back to a normal `cd`.
 
+![cdx demo](demo.gif)
+
 ## Install
 
 Use the install script (it downloads the core file, default hooks, and completions):
