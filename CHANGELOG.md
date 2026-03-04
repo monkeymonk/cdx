@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.2.3
+- Inline hook dispatch directly into `cdx()`, removing the internal `_cdx_dispatch` helper.
+
 ## v0.2.2
 - Add VHS demo tape and GIF to showcase core features.
 - Add demo GIF to README.

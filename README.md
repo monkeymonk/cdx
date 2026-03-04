@@ -13,6 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/monkeymonk/cdx/main/install.sh | ba
 ```
 
 What the installer does:
+
 - Installs `cdx.sh` to `~/.local/bin/cdx.sh`.
 - Creates `~/.config/cdx/` with `config.sh` and `hooks/` (if missing).
 - Adds `source ~/.local/bin/cdx.sh` to your shell rc file.
@@ -74,6 +75,7 @@ alias ....='cdx --up 3'
 ### Options and Parameters
 
 `cdx`:
+
 - `-i`: inspect mode (do not change directories; hooks still run).
 - `-h`, `--help`: show help.
 - `-v`, `--version`: show version.
@@ -81,6 +83,7 @@ alias ....='cdx --up 3'
 - `PATH`: optional target path; defaults to `$HOME`.
 
 `cdx --up` / `cdx -N`:
+
 - `--up [N[/subpath]]`: go up N parent levels (default 1), optionally into subpath.
 - `-N[/subpath]`: shorthand, e.g. `cdx -2/src`.
 - `-i`: inspect mode.
@@ -97,6 +100,7 @@ cdx_hook_name() {
 ```
 
 Hook types:
+
 - `sync`: runs in order, blocks navigation.
 - `async`: runs in the background, fire-and-forget.
 
@@ -120,6 +124,7 @@ CDX_HOOKS_ENABLED=(preview git hello)
 ```
 
 Built-in hooks (shipped by the installer):
+
 - `preview` (sync): lists directory contents (uses `eza`, `exa`, or `ls`).
 - `git` (sync): shows `git status -sb` when `.git/` is present.
 - `notify` (async): desktop notification via `notify-send`.
@@ -128,6 +133,7 @@ Built-in hooks (shipped by the installer):
 ## Configuration: `~/.config/cdx/*`
 
 All user configuration lives under `~/.config/cdx/` (or `$XDG_CONFIG_HOME/cdx`):
+
 - `config.sh`: global config sourced at shell startup.
 - `hooks/`: hook scripts (one file per hook name).
 
@@ -163,19 +169,7 @@ Run tests with the bundled Bats runner:
 
 ## Shell Integration Examples
 
-### fzf + cdx (Bash)
-
 ```bash
-cdxf() {
-  local dir
-  dir="$(find . -type d 2>/dev/null | fzf)"
-  [[ -n "$dir" ]] && cdx "$dir"
-}
-```
-
-### fzf + cdx (Zsh)
-
-```zsh
 cdxf() {
   local dir
   dir="$(find . -type d 2>/dev/null | fzf)"
