@@ -3,7 +3,7 @@
 
 __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
-__CDX_VERSION="0.2.2"
+__CDX_VERSION="0.2.3"
 
 _cdx_usage() {
   printf "cdx — extensible cd wrapper\nVersion: v%s\n" "$__CDX_VERSION"
