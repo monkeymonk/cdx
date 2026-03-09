@@ -114,14 +114,15 @@ else
 fi
 
 SHELL_RC="$(_detect_shell_rc)"
-FPATH_FIRST=""
-if [[ -n "${FPATH+x}" ]]; then
-  FPATH_FIRST="${FPATH%%:*}"
-fi
-if [[ "$SHELL_RC" == *zshrc* ]] && [[ -n "$FPATH_FIRST" ]] && [[ -d "$FPATH_FIRST" ]]; then
-  _download "$CDX_BASE/completions/cdx.zsh" "$FPATH_FIRST/_cdx"
-elif [[ -d "$HOME/.local/share/bash-completion/completions" ]]; then
-  _download "$CDX_BASE/completions/cdx.bash" \
+
+# Always install completions next to cdx.sh (auto-registration finds them here)
+mkdir -p "$CDX_BIN/completions"
+_download "$CDX_BASE/completions/cdx.zsh" "$CDX_BIN/completions/cdx.zsh"
+_download "$CDX_BASE/completions/cdx.bash" "$CDX_BIN/completions/cdx.bash"
+
+# Also install to standard shell completion dirs if available
+if [[ -d "$HOME/.local/share/bash-completion/completions" ]]; then
+  cp "$CDX_BIN/completions/cdx.bash" \
     "$HOME/.local/share/bash-completion/completions/cdx"
 fi
 

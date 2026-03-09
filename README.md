@@ -17,20 +17,18 @@ What the installer does:
 - Installs `cdx.sh` to `~/.local/bin/cdx.sh`.
 - Creates `~/.config/cdx/` with `config.sh` and `hooks/` (if missing).
 - Adds `source ~/.local/bin/cdx.sh` to your shell rc file.
-- Installs completions if standard locations exist.
+- Installs completions to `~/.local/bin/completions/` (and to standard bash-completion dir if available).
 
 To uninstall, remove the source line from your rc file and delete `~/.local/bin/cdx.sh` and `~/.config/cdx/`.
 
 ### Completions
 
-The installer enables completions when it detects standard shell completion directories. If you install manually, you can source one of the bundled completion files from your shell rc:
+**Zsh:** Completions are automatically registered when `cdx.sh` is sourced in an interactive zsh session. It locates `completions/cdx.zsh` relative to the script (or via `$fpath`) and registers completions for `cdx` — and for `cd` too if it's aliased to `cdx`. No manual setup needed.
+
+**Bash:** The installer places the completion file in `~/.local/share/bash-completion/completions/`. If you install manually, source it from your rc:
 
 ```bash
-# bash
 source /path/to/cdx/completions/cdx.bash
-
-# zsh
-source /path/to/cdx/completions/cdx.zsh
 ```
 
 ## Usage

@@ -3,7 +3,7 @@
 
 __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
-__CDX_VERSION="0.2.3"
+__CDX_VERSION="0.2.4"
 
 _cdx_usage() {
   printf "cdx — extensible cd wrapper\nVersion: v%s\n" "$__CDX_VERSION"
@@ -154,3 +154,32 @@ _cdx_init() {
 }
 
 _cdx_init
+
+# Register zsh completions when sourced in an interactive zsh session
+if [[ -n "${ZSH_VERSION:-}" ]] && [[ -o interactive ]]; then
+  # Capture script directory at source time (zsh-only prompt expansion)
+  __CDX_SCRIPT_DIR="${${(%):-%x}:h}"
+  _cdx_setup_completions() {
+    local comp_file=""
+    # Check next to the script first
+    [[ -f "$__CDX_SCRIPT_DIR/completions/cdx.zsh" ]] && comp_file="$__CDX_SCRIPT_DIR/completions/cdx.zsh"
+    # Fallback: check fpath for _cdx
+    if [[ -z "$comp_file" ]]; then
+      local dir
+      for dir in $fpath; do
+        [[ -f "$dir/_cdx" ]] && { comp_file="$dir/_cdx"; break; }
+      done
+    fi
+    if [[ -n "$comp_file" ]]; then
+      source "$comp_file"
+    fi
+    compdef _cdx cdx 2>/dev/null
+    # Also register for cd if aliased to cdx
+    if [[ "$(alias cd 2>/dev/null)" == *cdx* ]]; then
+      compdef _cdx cd 2>/dev/null
+    fi
+  }
+  _cdx_setup_completions
+  unset -f _cdx_setup_completions
+  unset __CDX_SCRIPT_DIR
+fi

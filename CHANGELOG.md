@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.4
+- Auto-register zsh completions when `cdx.sh` is sourced in an interactive session; also registers for `cd` if aliased to `cdx`.
+- Update README completions section to reflect auto-registration.
+
 ## v0.2.3
 - Inline hook dispatch directly into `cdx()`, removing the internal `_cdx_dispatch` helper.
 

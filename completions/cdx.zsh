@@ -103,4 +103,5 @@ _cdx() {
   esac
 }
 
-_cdx
+# Only auto-invoke when loaded via compinit (not when sourced directly)
+(( $+_comps )) && [[ "${funcstack[1]}" == _cdx ]] && _cdx
