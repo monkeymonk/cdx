@@ -3,7 +3,8 @@
 
 __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
-__CDX_VERSION="0.2.4"
+__CDX_RESOLVER_ORDER=(zoxide zshz z zlua autojump)
+__CDX_VERSION="0.2.5"
 
 _cdx_usage() {
   printf "cdx — extensible cd wrapper\nVersion: v%s\n" "$__CDX_VERSION"
@@ -48,6 +49,57 @@ cdx_register_hook() {
       __CDX_HOOKS_ASYNC+=("$fn") ;;
     *)     echo "cdx: unknown hook type: $type" >&2; return 1 ;;
   esac
+}
+
+# --- Directory resolvers ---
+
+_cdx_resolver_zoxide() {
+  command -v zoxide &>/dev/null || return 1
+  zoxide query -- "$1" 2>/dev/null
+}
+
+_cdx_resolver_zshz() {
+  declare -f zshz &>/dev/null || return 1
+  zshz -e "$1" 2>/dev/null
+}
+
+_cdx_resolver_z() {
+  declare -f _z &>/dev/null || return 1
+  _z -e "$1" 2>&1
+}
+
+_cdx_resolver_zlua() {
+  declare -f _zlua &>/dev/null || return 1
+  _zlua -e "$1" 2>/dev/null
+}
+
+_cdx_resolver_autojump() {
+  command -v autojump &>/dev/null || return 1
+  local result
+  result="$(autojump "$1" 2>/dev/null)" || return 1
+  [[ -d "$result" ]] && echo "$result" || return 1
+}
+
+_cdx_resolve() {
+  local query="$1"
+  local resolvers=()
+  local name result
+
+  if [[ -n "${CDX_RESOLVERS+set}" ]]; then
+    resolvers=("${CDX_RESOLVERS[@]}")
+  else
+    for name in "${__CDX_RESOLVER_ORDER[@]}"; do
+      typeset -f "_cdx_resolver_${name}" &>/dev/null && resolvers+=("$name")
+    done
+  fi
+
+  for name in "${resolvers[@]}"; do
+    if result="$("_cdx_resolver_${name}" "$query")" && [[ -n "$result" ]]; then
+      echo "$result"
+      return 0
+    fi
+  done
+  return 1
 }
 
 cdx() {
@@ -104,8 +156,8 @@ cdx() {
   local target="${dir:-$HOME}"
   local resolved_target=""
 
-  if [[ ! -d "$target" ]] && command -v zoxide &>/dev/null; then
-    resolved_target="$(zoxide query -- "$target" 2>/dev/null)"
+  if [[ ! -d "$target" ]]; then
+    resolved_target="$(_cdx_resolve "$target")" || true
   fi
   [[ -z "$resolved_target" ]] && resolved_target="$target"
 

@@ -8,7 +8,7 @@ cdx_hook_preview() {
   elif command -v exa &>/dev/null; then
     exa ${CDX_LS_ARGS:---color=auto} "$dir"
   else
-    ls ${CDX_LS_ARGS:--lh} "$dir"
+    ls ${CDX_LS_ARGS:---color=auto} "$dir"
   fi
 }
 

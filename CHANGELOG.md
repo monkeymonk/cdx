@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.5
+- Add pluggable resolver chain: support zoxide, zsh-z, z, z.lua, and autojump for fuzzy directory jumping.
+- Auto-detect installed resolvers; override with `CDX_RESOLVERS` in config.
+- Fix preview hook `ls` fallback using `-lh` instead of `--color=auto` to match eza/exa output style.
+
 ## v0.2.4
 - Auto-register zsh completions when `cdx.sh` is sourced in an interactive session; also registers for `cd` if aliased to `cdx`.
 - Update README completions section to reflect auto-registration.
