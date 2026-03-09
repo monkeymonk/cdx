@@ -7,7 +7,7 @@ cdx_hook_docker() {
   [[ -f "$context_file" ]] || return 0
   command -v docker &>/dev/null || return 0
   local context
-  context="$(cat "$context_file")"
+  read -r context < "$context_file" || return 0
   [[ -n "$context" ]] || return 0
   docker context use "$context"
 }

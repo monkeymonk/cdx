@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.6
+- Cache resolver availability at init time to avoid repeated `command -v`/`typeset -f` lookups.
+- Eliminate subshell fork on enter path by using `$PWD` after `builtin cd`.
+- Cache ls command (`eza`/`exa`/`ls`) at source time in preview hook.
+- Unify zsh/bash `-N` flag parsing into a single case branch.
+- Replace `cat` with `read` in docker hook to avoid external process fork.
+- Add `CDX_CDXRC=0` option to disable per-directory `.cdxrc` sourcing.
+- Guard `_cdx_init` to only run in interactive shells.
+- Guard hook dispatch against unset/removed hook functions.
+- Fix stale `_cdx_dispatch` test references (function removed in v0.2.3).
+- Fix hook test load paths to work when run from project root.
+
 ## v0.2.5
 - Add pluggable resolver chain: support zoxide, zsh-z, z, z.lua, and autojump for fuzzy directory jumping.
 - Auto-detect installed resolvers; override with `CDX_RESOLVERS` in config.

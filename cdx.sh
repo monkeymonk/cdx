@@ -4,7 +4,8 @@
 __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
 __CDX_RESOLVER_ORDER=(zoxide zshz z zlua autojump)
-__CDX_VERSION="0.2.5"
+__CDX_RESOLVERS_CACHED=()
+__CDX_VERSION="0.2.6"
 
 _cdx_usage() {
   printf "cdx — extensible cd wrapper\nVersion: v%s\n" "$__CDX_VERSION"
@@ -80,20 +81,28 @@ _cdx_resolver_autojump() {
   [[ -d "$result" ]] && echo "$result" || return 1
 }
 
-_cdx_resolve() {
-  local query="$1"
-  local resolvers=()
-  local name result
-
+_cdx_cache_resolvers() {
+  __CDX_RESOLVERS_CACHED=()
   if [[ -n "${CDX_RESOLVERS+set}" ]]; then
-    resolvers=("${CDX_RESOLVERS[@]}")
+    __CDX_RESOLVERS_CACHED=("${CDX_RESOLVERS[@]}")
   else
+    local name
     for name in "${__CDX_RESOLVER_ORDER[@]}"; do
-      typeset -f "_cdx_resolver_${name}" &>/dev/null && resolvers+=("$name")
+      typeset -f "_cdx_resolver_${name}" &>/dev/null && __CDX_RESOLVERS_CACHED+=("$name")
     done
   fi
+}
 
-  for name in "${resolvers[@]}"; do
+_cdx_resolve() {
+  local query="$1"
+  local name result
+
+  # Re-cache if CDX_RESOLVERS was set/changed or cache is empty
+  if [[ -n "${CDX_RESOLVERS+set}" ]] || [[ ${#__CDX_RESOLVERS_CACHED[@]} -eq 0 ]]; then
+    _cdx_cache_resolvers
+  fi
+
+  for name in "${__CDX_RESOLVERS_CACHED[@]}"; do
     if result="$("_cdx_resolver_${name}" "$query")" && [[ -n "$result" ]]; then
       echo "$result"
       return 0
@@ -118,11 +127,10 @@ cdx() {
       -h|--help) _cdx_usage; return 0 ;;
       -v|--version) _cdx_version; return 0 ;;
       --) shift; dir="${1-}"; break ;;
-      -[0-9]*) up_mode=1; up_spec="${1#-}"; shift ;;
       -*)
-        # zsh may not match -[0-9]* above; check second char without character class
-        case "${1:1:1}" in
-          0|1|2|3|4|5|6|7|8|9) up_mode=1; up_spec="${1#-}" ;;
+        # Unified numeric-flag detection (works in both bash and zsh)
+        case "${1#-}" in
+          [0-9]*) up_mode=1; up_spec="${1#-}" ;;
           *) dir="${dir:-$1}" ;;
         esac
         shift ;;
@@ -161,30 +169,35 @@ cdx() {
   fi
   [[ -z "$resolved_target" ]] && resolved_target="$target"
 
-  local resolved
-  resolved="$(builtin cd "$resolved_target" 2>/dev/null && pwd)" || {
-    echo "cdx: no such directory: $target" >&2
-    return 1
-  }
-
-  local mode="enter"
+  local resolved mode
   if [[ $inspect -eq 1 ]]; then
     mode="inspect"
+    resolved="$(builtin cd "$resolved_target" 2>/dev/null && pwd)" || {
+      echo "cdx: no such directory: $target" >&2
+      return 1
+    }
     echo "$resolved"
   else
-    builtin cd "$resolved" || return 1
+    mode="enter"
+    builtin cd "$resolved_target" 2>/dev/null || {
+      echo "cdx: no such directory: $target" >&2
+      return 1
+    }
+    resolved="$PWD"
   fi
 
-  local cdxrc="$resolved/.cdxrc"
-  [[ -f "$cdxrc" ]] && source "$cdxrc"
+  if [[ "${CDX_CDXRC:-1}" != "0" ]]; then
+    local cdxrc="$resolved/.cdxrc"
+    [[ -f "$cdxrc" ]] && source "$cdxrc"
+  fi
 
   # Dispatch hooks inline
   local fn
   for fn in "${__CDX_HOOKS_SYNC[@]}"; do
-    "$fn" "$mode" "$resolved"
+    typeset -f "$fn" &>/dev/null && "$fn" "$mode" "$resolved"
   done
   for fn in "${__CDX_HOOKS_ASYNC[@]}"; do
-    ("$fn" "$mode" "$resolved" &>/dev/null) &
+    typeset -f "$fn" &>/dev/null && ("$fn" "$mode" "$resolved" &>/dev/null) &
   done
 }
 
@@ -203,9 +216,13 @@ _cdx_init() {
       echo "cdx: hook not found: $name" >&2
     fi
   done
+
+  _cdx_cache_resolvers
 }
 
-_cdx_init
+if [[ -o interactive ]] 2>/dev/null; then
+  _cdx_init
+fi
 
 # Register zsh completions when sourced in an interactive zsh session
 if [[ -n "${ZSH_VERSION:-}" ]] && [[ -o interactive ]]; then

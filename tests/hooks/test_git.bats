@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-load '../../tests/test_helper'
+load '../test_helper'
 
 setup() {
   setup_cdx
