@@ -36,7 +36,7 @@ teardown() {
 @test "cdx -i --up dispatches inspect mode" {
   HOOK_MODE=""
   cdx_hook_mode_check() { HOOK_MODE="$1"; }
-  cdx_register_hook sync cdx_hook_mode_check
+  cdx_register_hook sync cdx_hook_mode_check all
   cdx -i --up 1
   [ "$HOOK_MODE" = "inspect" ]
 }

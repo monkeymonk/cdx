@@ -1,6 +1,6 @@
 # cdx
 
-`cdx` is a minimal, extensible wrapper around `cd` that dispatches lifecycle hooks when you enter a directory. It supports synchronous and asynchronous hooks, per-directory config via `.cdxrc`, and `--up` / `-N` shorthand for climbing parent directories. If `zoxide` is installed, `cdx` uses it to resolve targets before falling back to a normal `cd`.
+`cdx` is a minimal, extensible wrapper around `cd` that dispatches lifecycle hooks when you enter a directory. It supports synchronous and asynchronous hooks, per-directory config via `.cdxrc`, and `--up` / `-N` shorthand for climbing parent directories. A pluggable resolver chain (zoxide, zsh-z, z, z.lua, autojump) resolves fuzzy targets before falling back to a normal `cd`.
 
 ![cdx demo](demo.gif)
 
@@ -102,7 +102,25 @@ Hook types:
 - `sync`: runs in order, blocks navigation.
 - `async`: runs in the background, fire-and-forget.
 
-Example custom hook:
+### Hook Context
+
+By default, hooks only run in interactive shells. You can control this with an optional third argument to `cdx_register_hook`:
+
+| Context          | Interactive shell | Non-interactive shell (CI, editors, scripts) |
+|------------------|:-:|:-:|
+| `interactive`    | yes | — |
+| `noninteractive` | — | yes |
+| `all`            | yes | yes |
+
+```bash
+cdx_register_hook sync cdx_hook_preview                # interactive only (default)
+cdx_register_hook sync cdx_hook_env all                 # both contexts
+cdx_register_hook async cdx_hook_log noninteractive     # non-interactive only
+```
+
+This prevents hooks like `preview` or `git` from producing unwanted output in non-interactive shells (e.g. when `cd` is aliased to `cdx` inside CI runners or editor subprocesses).
+
+### Custom Hook Example
 
 ```bash
 # ~/.config/cdx/hooks/hello.sh
@@ -146,6 +164,8 @@ CDX_HOOKS_ENABLED=(preview git)
 
 - `CDX_CONFIG_DIR`: override config root (defaults to `~/.config/cdx`).
 - `CDX_HOOKS_ENABLED`: list of hook names to load (e.g., `preview git notify`).
+- `CDX_RESOLVERS`: override resolver order (e.g., `CDX_RESOLVERS=(zoxide z)`). By default, cdx auto-detects installed resolvers from: zoxide, zsh-z, z, z.lua, autojump.
+- `CDX_CDXRC`: set to `0` to disable per-directory `.cdxrc` sourcing.
 - `CDX_LS_ARGS`: arguments passed to `eza`/`exa`/`ls` in the preview hook.
 
 Per-directory config via `.cdxrc`:

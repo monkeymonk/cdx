@@ -5,7 +5,11 @@ __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
 __CDX_RESOLVER_ORDER=(zoxide zshz z zlua autojump)
 __CDX_RESOLVERS_CACHED=()
-__CDX_VERSION="0.2.6"
+__CDX_VERSION="0.2.7"
+
+# Per-hook shell context: interactive (default), noninteractive, all
+unset __CDX_HOOK_CONTEXT 2>/dev/null
+declare -gA __CDX_HOOK_CONTEXT 2>/dev/null || typeset -gA __CDX_HOOK_CONTEXT 2>/dev/null || true
 
 _cdx_usage() {
   printf "cdx — extensible cd wrapper\nVersion: v%s\n" "$__CDX_VERSION"
@@ -40,7 +44,11 @@ _cdx_version() {
 }
 
 cdx_register_hook() {
-  local type="$1" fn="$2"
+  local type="$1" fn="$2" ctx="${3:-interactive}"
+  case "$ctx" in
+    interactive|noninteractive|all) ;;
+    *) echo "cdx: unknown hook context: $ctx (use interactive, noninteractive, or all)" >&2; return 1 ;;
+  esac
   case "$type" in
     sync)
       [[ " ${__CDX_HOOKS_SYNC[*]} " == *" $fn "* ]] && return 0
@@ -50,6 +58,7 @@ cdx_register_hook() {
       __CDX_HOOKS_ASYNC+=("$fn") ;;
     *)     echo "cdx: unknown hook type: $type" >&2; return 1 ;;
   esac
+  __CDX_HOOK_CONTEXT[$fn]="$ctx"
 }
 
 # --- Directory resolvers ---
@@ -191,12 +200,20 @@ cdx() {
     [[ -f "$cdxrc" ]] && source "$cdxrc"
   fi
 
-  # Dispatch hooks inline
-  local fn
+  # Determine shell context for hook filtering
+  local _cdx_shell_ctx="noninteractive"
+  [[ -o interactive ]] 2>/dev/null && _cdx_shell_ctx="interactive"
+
+  # Dispatch hooks whose context matches the current shell
+  local fn _ctx
   for fn in "${__CDX_HOOKS_SYNC[@]}"; do
+    _ctx="${__CDX_HOOK_CONTEXT[$fn]:-interactive}"
+    [[ "$_ctx" == "$_cdx_shell_ctx" || "$_ctx" == "all" ]] || continue
     typeset -f "$fn" &>/dev/null && "$fn" "$mode" "$resolved"
   done
   for fn in "${__CDX_HOOKS_ASYNC[@]}"; do
+    _ctx="${__CDX_HOOK_CONTEXT[$fn]:-interactive}"
+    [[ "$_ctx" == "$_cdx_shell_ctx" || "$_ctx" == "all" ]] || continue
     typeset -f "$fn" &>/dev/null && ("$fn" "$mode" "$resolved" &>/dev/null) &
   done
 }

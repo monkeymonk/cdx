@@ -44,7 +44,7 @@ EOF
 @test "cdx calls sync hooks with mode and dir" {
   SYNC_HOOK_CALLED=""
   cdx_hook_testable() { SYNC_HOOK_CALLED="$1:$2"; }
-  cdx_register_hook sync cdx_hook_testable
+  cdx_register_hook sync cdx_hook_testable all
   cdx /tmp
   [ "$SYNC_HOOK_CALLED" = "enter:/tmp" ]
 }
@@ -53,8 +53,8 @@ EOF
   ORDER=""
   hook_a() { ORDER="${ORDER}a"; }
   hook_b() { ORDER="${ORDER}b"; }
-  cdx_register_hook sync hook_a
-  cdx_register_hook sync hook_b
+  cdx_register_hook sync hook_a all
+  cdx_register_hook sync hook_b all
   cdx /tmp
   [ "$ORDER" = "ab" ]
 }
@@ -88,7 +88,7 @@ EOF
 @test "cdx dispatches enter mode to hooks" {
   HOOK_MODE=""
   cdx_hook_mode_check() { HOOK_MODE="$1"; }
-  cdx_register_hook sync cdx_hook_mode_check
+  cdx_register_hook sync cdx_hook_mode_check all
   cdx /tmp
   [ "$HOOK_MODE" = "enter" ]
 }
@@ -96,7 +96,7 @@ EOF
 @test "cdx passes resolved absolute path to hooks" {
   HOOK_DIR=""
   cdx_hook_dir_check() { HOOK_DIR="$2"; }
-  cdx_register_hook sync cdx_hook_dir_check
+  cdx_register_hook sync cdx_hook_dir_check all
   cdx /tmp
   [ "$HOOK_DIR" = "/tmp" ]
 }
@@ -110,7 +110,7 @@ EOF
 @test "cdx -i dispatches inspect mode to hooks" {
   HOOK_MODE=""
   cdx_hook_mode_check() { HOOK_MODE="$1"; }
-  cdx_register_hook sync cdx_hook_mode_check
+  cdx_register_hook sync cdx_hook_mode_check all
   cdx -i /tmp
   [ "$HOOK_MODE" = "inspect" ]
 }
@@ -167,4 +167,54 @@ EOF
     [[ "$fn" == "cdx_hook_myhook" ]] && count=$(( count + 1 ))
   done
   [ "$count" -eq 1 ]
+}
+
+# --- Hook context tests ---
+
+@test "cdx_register_hook defaults context to interactive" {
+  cdx_hook_ctx_default() { :; }
+  cdx_register_hook sync cdx_hook_ctx_default
+  [ "${__CDX_HOOK_CONTEXT[cdx_hook_ctx_default]}" = "interactive" ]
+}
+
+@test "cdx_register_hook accepts all context values" {
+  cdx_hook_ctx_i() { :; }
+  cdx_hook_ctx_n() { :; }
+  cdx_hook_ctx_a() { :; }
+  cdx_register_hook sync cdx_hook_ctx_i interactive
+  cdx_register_hook sync cdx_hook_ctx_n noninteractive
+  cdx_register_hook sync cdx_hook_ctx_a all
+  [ "${__CDX_HOOK_CONTEXT[cdx_hook_ctx_i]}" = "interactive" ]
+  [ "${__CDX_HOOK_CONTEXT[cdx_hook_ctx_n]}" = "noninteractive" ]
+  [ "${__CDX_HOOK_CONTEXT[cdx_hook_ctx_a]}" = "all" ]
+}
+
+@test "cdx_register_hook rejects invalid context" {
+  run cdx_register_hook sync my_fn bogus
+  assert_failure
+  assert_output --partial "unknown hook context: bogus"
+}
+
+@test "cdx skips interactive-only hooks in noninteractive shell" {
+  CALLED=""
+  cdx_hook_interactive_only() { CALLED="yes"; }
+  cdx_register_hook sync cdx_hook_interactive_only interactive
+  cdx /tmp
+  [ -z "$CALLED" ]
+}
+
+@test "cdx runs all-context hooks in noninteractive shell" {
+  CALLED=""
+  cdx_hook_all_ctx() { CALLED="yes"; }
+  cdx_register_hook sync cdx_hook_all_ctx all
+  cdx /tmp
+  [ "$CALLED" = "yes" ]
+}
+
+@test "cdx runs noninteractive-context hooks in noninteractive shell" {
+  CALLED=""
+  cdx_hook_ni_ctx() { CALLED="yes"; }
+  cdx_register_hook sync cdx_hook_ni_ctx noninteractive
+  cdx /tmp
+  [ "$CALLED" = "yes" ]
 }

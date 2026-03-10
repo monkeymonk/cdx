@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.7
+- Add context-aware hook dispatch: hooks can now specify `interactive`, `noninteractive`, or `all` as a third argument to `cdx_register_hook`.
+- Existing hooks default to `interactive`, preserving backward compatibility.
+- Fix spurious "permission denied" errors when `cd` is aliased to `cdx` in non-interactive shells (e.g. Claude Code, CI, editor subprocesses).
+
 ## v0.2.6
 - Cache resolver availability at init time to avoid repeated `command -v`/`typeset -f` lookups.
 - Eliminate subshell fork on enter path by using `$PWD` after `builtin cd`.

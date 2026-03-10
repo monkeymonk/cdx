@@ -11,7 +11,7 @@ setup_cdx() {
   # Empty config by default — no hooks loaded
   echo 'CDX_HOOKS_ENABLED=()' > "$CDX_CONFIG_DIR/config.sh"
   # Reset hook arrays and load cdx
-  unset __CDX_HOOKS_SYNC __CDX_HOOKS_ASYNC __CDX_RESOLVERS_CACHED
+  unset __CDX_HOOKS_SYNC __CDX_HOOKS_ASYNC __CDX_RESOLVERS_CACHED __CDX_HOOK_CONTEXT
   source "$CDX_ROOT/cdx.sh"
   _cdx_init
 }
