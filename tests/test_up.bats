@@ -61,3 +61,15 @@ teardown() {
   cdx -i -2
   [ "$(pwd)" = "$original" ]
 }
+
+@test "cdx --up with invalid spec returns error" {
+  run cdx --up foo
+  assert_failure
+  assert_output --partial "cdx: invalid --up spec: foo"
+}
+
+@test "cdx -0 returns error" {
+  run cdx -0
+  assert_failure
+  assert_output --partial "cdx: invalid --up spec: 0"
+}

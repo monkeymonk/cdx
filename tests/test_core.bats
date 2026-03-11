@@ -41,6 +41,32 @@ EOF
   [ ${#__CDX_HOOKS_ASYNC[@]} -eq 0 ]
 }
 
+@test "_cdx_dispatch calls sync hooks with mode and dir" {
+  SYNC_HOOK_CALLED=""
+  cdx_hook_testable() { SYNC_HOOK_CALLED="$1:$2"; }
+  cdx_register_hook sync cdx_hook_testable all
+  _cdx_dispatch enter /tmp
+  [ "$SYNC_HOOK_CALLED" = "enter:/tmp" ]
+}
+
+@test "_cdx_dispatch calls multiple sync hooks in order" {
+  ORDER=""
+  hook_a() { ORDER="${ORDER}a"; }
+  hook_b() { ORDER="${ORDER}b"; }
+  cdx_register_hook sync hook_a all
+  cdx_register_hook sync hook_b all
+  _cdx_dispatch enter /tmp
+  [ "$ORDER" = "ab" ]
+}
+
+@test "_cdx_dispatch fires async hooks without blocking" {
+  ASYNC_FILE="$BATS_TMPDIR/async_$$"
+  cdx_hook_async_test() { sleep 0.1; touch "$1"; }
+  cdx_register_hook async cdx_hook_async_test all
+  _cdx_dispatch enter "$BATS_TMPDIR"
+  [ ! -f "$ASYNC_FILE" ]
+}
+
 @test "cdx calls sync hooks with mode and dir" {
   SYNC_HOOK_CALLED=""
   cdx_hook_testable() { SYNC_HOOK_CALLED="$1:$2"; }
@@ -209,6 +235,14 @@ EOF
   cdx_register_hook sync cdx_hook_all_ctx all
   cdx /tmp
   [ "$CALLED" = "yes" ]
+}
+
+@test "cdx_register_hook re-registration updates context" {
+  cdx_hook_reregister() { :; }
+  cdx_register_hook sync cdx_hook_reregister interactive
+  [ "${__CDX_HOOK_CONTEXT[cdx_hook_reregister]}" = "interactive" ]
+  cdx_register_hook sync cdx_hook_reregister all
+  [ "${__CDX_HOOK_CONTEXT[cdx_hook_reregister]}" = "all" ]
 }
 
 @test "cdx runs noninteractive-context hooks in noninteractive shell" {

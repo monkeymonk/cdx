@@ -102,15 +102,24 @@ for hook in preview git notify docker; do
   _download "$CDX_BASE/hooks/${hook}.sh" "$CDX_CONFIG/hooks/${hook}.sh"
 done
 
-if [[ ! -f "$CDX_CONFIG/config.sh" ]]; then
-  cat > "$CDX_CONFIG/config.sh" <<'CONFIG'
+_default_config() {
+  cat <<'CONFIG'
 # cdx config — edit to enable/disable hooks
 # Add custom hooks to ~/.config/cdx/hooks/ and list them here
 CDX_HOOKS_ENABLED=(preview git)
 CONFIG
+}
+
+if [[ ! -f "$CDX_CONFIG/config.sh" ]]; then
+  _default_config > "$CDX_CONFIG/config.sh"
   echo "cdx: created $CDX_CONFIG/config.sh"
 else
-  echo "cdx: $CDX_CONFIG/config.sh already exists, skipping"
+  if _confirm "cdx: $CDX_CONFIG/config.sh already exists, overwrite?"; then
+    _default_config > "$CDX_CONFIG/config.sh"
+    echo "cdx: replaced $CDX_CONFIG/config.sh"
+  else
+    echo "cdx: kept existing $CDX_CONFIG/config.sh"
+  fi
 fi
 
 SHELL_RC="$(_detect_shell_rc)"

@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2.8
+- Extract `_cdx_dispatch` back into standalone function for testability and reduced `cdx()` complexity.
+- Fix hook deduplication: use `__CDX_HOOK_CONTEXT` associative array instead of fragile string scan; re-registration now updates context.
+- Fix `_cdx_resolver_z` leaking stderr to stdout (`2>&1` → `2>/dev/null`).
+- Add snapshot guard: fall back to `builtin cd` when cdx is loaded via shell snapshot without full initialization (e.g. Claude Code, Codex).
+- Validate `--up` spec: non-numeric or zero values now warn and return error instead of silently defaulting.
+- Add resolver dirty flag to avoid redundant re-caching on every resolve call.
+- Standardize on `typeset -f` over `declare -f` for cross-shell consistency.
+- Prefer `typeset -gA` (zsh-native) over `declare -gA` for associative array init.
+- Move `local` declaration outside loop in `_cdx_init`.
+
 ## v0.2.7
 - Add context-aware hook dispatch: hooks can now specify `interactive`, `noninteractive`, or `all` as a third argument to `cdx_register_hook`.
 - Existing hooks default to `interactive`, preserving backward compatibility.
