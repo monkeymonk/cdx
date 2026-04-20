@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.0
+- Add native **fish shell** support: new `cdx.fish` core, `completions/cdx.fish`, and `hooks/{preview,git,notify,docker}.fish`.
+- Installer auto-detects fish (`$SHELL`/`$FISH_VERSION`) and installs the matching core file, hooks, config template, and completions (to `~/.config/fish/completions/`); patches `~/.config/fish/config.fish`.
+- Add `CDX_INSTALL_SHELL` env var to override installer shell detection (e.g. for `curl | bash` edge cases).
+- Fish uses `.cdxrc.fish` for per-directory config (distinct from bash/zsh `.cdxrc` to avoid syntax collisions in shared projects).
+- Fish resolver chain auto-detects from `zoxide`, `z`, `z.lua`, `autojump` (zsh-z is zsh-specific and not supported in fish).
+- Make `demo.tape` portable by capturing `$PWD` before any `cd` — the tape now runs from any checkout path (was hardcoded to the maintainer's machine).
+- Update README to document fish install, completions, hook authoring (fish function form), alias examples, and `.cdxrc.fish`.
+
 ## v0.2.8
 - Extract `_cdx_dispatch` back into standalone function for testability and reduced `cdx()` complexity.
 - Fix hook deduplication: use `__CDX_HOOK_CONTEXT` associative array instead of fragile string scan; re-registration now updates context.

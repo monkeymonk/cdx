@@ -1,6 +1,6 @@
 # cdx
 
-`cdx` is a minimal, extensible wrapper around `cd` that dispatches lifecycle hooks when you enter a directory. It supports synchronous and asynchronous hooks, per-directory config via `.cdxrc`, and `--up` / `-N` shorthand for climbing parent directories. A pluggable resolver chain (zoxide, zsh-z, z, z.lua, autojump) resolves fuzzy targets before falling back to a normal `cd`.
+`cdx` is a minimal, extensible wrapper around `cd` that dispatches lifecycle hooks when you enter a directory. It supports synchronous and asynchronous hooks, per-directory config via `.cdxrc` (or `.cdxrc.fish`), and `--up` / `-N` shorthand for climbing parent directories. A pluggable resolver chain (zoxide, zsh-z, z, z.lua, autojump) resolves fuzzy targets before falling back to a normal `cd`. Supports **bash**, **zsh**, and **fish**.
 
 ![cdx demo](demo.gif)
 
@@ -12,14 +12,20 @@ Use the install script (it downloads the core file, default hooks, and completio
 curl -fsSL https://raw.githubusercontent.com/monkeymonk/cdx/main/install.sh | bash
 ```
 
+The installer detects your shell (bash, zsh, or fish) from `$SHELL` and picks the matching files. To override detection, set `CDX_INSTALL_SHELL`:
+
+```bash
+CDX_INSTALL_SHELL=fish bash -c "$(curl -fsSL https://raw.githubusercontent.com/monkeymonk/cdx/main/install.sh)"
+```
+
 What the installer does:
 
-- Installs `cdx.sh` to `~/.local/bin/cdx.sh`.
-- Creates `~/.config/cdx/` with `config.sh` and `hooks/` (if missing).
-- Adds `source ~/.local/bin/cdx.sh` to your shell rc file.
-- Installs completions to `~/.local/bin/completions/` (and to standard bash-completion dir if available).
+- Installs the core file (`cdx.sh` for bash/zsh, `cdx.fish` for fish) to `~/.local/bin/`.
+- Creates `~/.config/cdx/` with a config file (`config.sh` or `config.fish`) and matching `hooks/` (if missing).
+- Adds a source line to your shell rc file (`~/.bashrc`, `~/.zshrc`, or `~/.config/fish/config.fish`).
+- Installs completions to the appropriate location (`~/.local/share/bash-completion/completions/` for bash, next to the script for zsh, `~/.config/fish/completions/` for fish).
 
-To uninstall, remove the source line from your rc file and delete `~/.local/bin/cdx.sh` and `~/.config/cdx/`.
+To uninstall, remove the source line from your rc file and delete `~/.local/bin/cdx.{sh,fish}` and `~/.config/cdx/`.
 
 ### Completions
 
@@ -31,12 +37,20 @@ To uninstall, remove the source line from your rc file and delete `~/.local/bin/
 source /path/to/cdx/completions/cdx.bash
 ```
 
+**Fish:** Completions are placed in `~/.config/fish/completions/cdx.fish` and autoloaded by fish. Sourcing `cdx.fish` also falls back to loading completions from alongside the script.
+
 ## Usage
 
 Load `cdx` into your shell (installer already does this):
 
 ```bash
+# bash / zsh
 source ~/.local/bin/cdx.sh
+```
+
+```fish
+# fish
+source ~/.local/bin/cdx.fish
 ```
 
 Basic usage:
@@ -65,9 +79,17 @@ cdx -i --up 2     # inspect mode, up 2 levels
 Recommended shell aliases:
 
 ```bash
+# bash / zsh
 alias ..='cdx --up'
 alias ...='cdx --up 2'
 alias ....='cdx --up 3'
+```
+
+```fish
+# fish
+alias .. 'cdx --up'
+alias ... 'cdx --up 2'
+alias .... 'cdx --up 3'
 ```
 
 ### Options and Parameters
@@ -88,13 +110,21 @@ alias ....='cdx --up 3'
 
 ## Hooks
 
-Hooks are shell functions registered via `cdx_register_hook` and are called on each navigation with two arguments:
+Hooks are shell functions registered via `cdx_register_hook` and are called on each navigation with two arguments: `mode` (`enter` or `inspect`) and `dir` (absolute target path).
+
+Bash / zsh:
 
 ```bash
 cdx_hook_name() {
-  local mode="$1"  # enter | inspect
-  local dir="$2"   # absolute target path
+  local mode="$1" dir="$2"
 }
+```
+
+Fish:
+
+```fish
+function cdx_hook_name --argument-names mode dir
+end
 ```
 
 Hook types:
@@ -122,6 +152,8 @@ This prevents hooks like `preview` or `git` from producing unwanted output in no
 
 ### Custom Hook Example
 
+Bash / zsh:
+
 ```bash
 # ~/.config/cdx/hooks/hello.sh
 cdx_hook_hello() {
@@ -139,6 +171,24 @@ Enable it in `config.sh`:
 CDX_HOOKS_ENABLED=(preview git hello)
 ```
 
+Fish:
+
+```fish
+# ~/.config/cdx/hooks/hello.fish
+function cdx_hook_hello --argument-names mode dir
+    test "$mode" = enter; or return 0
+    echo "Hello from $dir"
+end
+
+cdx_register_hook sync cdx_hook_hello
+```
+
+Enable it in `config.fish`:
+
+```fish
+set -g CDX_HOOKS_ENABLED preview git hello
+```
+
 Built-in hooks (shipped by the installer):
 
 - `preview` (sync): lists directory contents (uses `eza`, `exa`, or `ls`).
@@ -150,8 +200,8 @@ Built-in hooks (shipped by the installer):
 
 All user configuration lives under `~/.config/cdx/` (or `$XDG_CONFIG_HOME/cdx`):
 
-- `config.sh`: global config sourced at shell startup.
-- `hooks/`: hook scripts (one file per hook name).
+- `config.sh` (bash/zsh) or `config.fish` (fish): global config sourced at shell startup.
+- `hooks/`: hook scripts (`<name>.sh` for bash/zsh, `<name>.fish` for fish — one file per hook name).
 
 Example `config.sh`:
 
@@ -160,22 +210,34 @@ Example `config.sh`:
 CDX_HOOKS_ENABLED=(preview git)
 ```
 
+Example `config.fish`:
+
+```fish
+# ~/.config/cdx/config.fish
+set -g CDX_HOOKS_ENABLED preview git
+```
+
 ### Configuration Variables
 
 - `CDX_CONFIG_DIR`: override config root (defaults to `~/.config/cdx`).
 - `CDX_HOOKS_ENABLED`: list of hook names to load (e.g., `preview git notify`).
-- `CDX_RESOLVERS`: override resolver order (e.g., `CDX_RESOLVERS=(zoxide z)`). By default, cdx auto-detects installed resolvers from: zoxide, zsh-z, z, z.lua, autojump.
-- `CDX_CDXRC`: set to `0` to disable per-directory `.cdxrc` sourcing.
+- `CDX_RESOLVERS`: override resolver order (e.g., `CDX_RESOLVERS=(zoxide z)`). By default, cdx auto-detects installed resolvers from: zoxide, zsh-z, z, z.lua, autojump. Fish does not support the zsh-specific `zsh-z` resolver and auto-detects from: zoxide, z, z.lua, autojump.
+- `CDX_CDXRC`: set to `0` to disable per-directory `.cdxrc` sourcing. (Fish sources `.cdxrc.fish` instead of `.cdxrc`.)
 - `CDX_LS_ARGS`: arguments passed to `eza`/`exa`/`ls` in the preview hook.
 
-Per-directory config via `.cdxrc`:
+Per-directory config via `.cdxrc` (bash/zsh) or `.cdxrc.fish` (fish):
 
 ```bash
 # /path/to/project/.cdxrc
 CDX_HOOKS_ENABLED=(preview git docker)
 ```
 
-`.cdxrc` is sourced after resolving the target directory and before hook dispatch. This allows per-project behavior, such as enabling additional hooks or setting hook-specific environment variables.
+```fish
+# /path/to/project/.cdxrc.fish
+set -g CDX_HOOKS_ENABLED preview git docker
+```
+
+The file is sourced after resolving the target directory and before hook dispatch. This allows per-project behavior, such as enabling additional hooks or setting hook-specific environment variables.
 
 ## Development
 
@@ -187,10 +249,21 @@ Run tests with the bundled Bats runner:
 
 ## Shell Integration Examples
 
+Bash / zsh:
+
 ```bash
 cdxf() {
   local dir
   dir="$(find . -type d 2>/dev/null | fzf)"
   [[ -n "$dir" ]] && cdx "$dir"
 }
+```
+
+Fish:
+
+```fish
+function cdxf
+    set -l dir (find . -type d 2>/dev/null | fzf)
+    test -n "$dir"; and cdx $dir
+end
 ```

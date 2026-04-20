@@ -6,12 +6,27 @@ CDX_BIN="${HOME}/.local/bin"
 CDX_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/cdx"
 CDX_TAG=""
 
-_detect_shell_rc() {
-  if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$SHELL" == */zsh ]]; then
-    echo "$HOME/.zshrc"
-  else
-    echo "$HOME/.bashrc"
+_detect_shell_kind() {
+  # Allow explicit override: CDX_INSTALL_SHELL=fish bash install.sh
+  if [[ -n "${CDX_INSTALL_SHELL:-}" ]]; then
+    echo "$CDX_INSTALL_SHELL"
+    return
   fi
+  if [[ -n "${FISH_VERSION:-}" ]] || [[ "$SHELL" == */fish ]]; then
+    echo "fish"
+  elif [[ -n "${ZSH_VERSION:-}" ]] || [[ "$SHELL" == */zsh ]]; then
+    echo "zsh"
+  else
+    echo "bash"
+  fi
+}
+
+_detect_shell_rc() {
+  case "$(_detect_shell_kind)" in
+    fish) echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/config.fish" ;;
+    zsh)  echo "$HOME/.zshrc" ;;
+    *)    echo "$HOME/.bashrc" ;;
+  esac
 }
 
 _download() {
@@ -55,12 +70,20 @@ _confirm() {
 }
 
 _patch_rc() {
-  local rc="$1"
-  local new_line="source \"$HOME/.local/bin/cdx.sh\""
-  local legacy_line="source \"${XDG_DATA_HOME:-$HOME/.local/share}/cdx/cdx.sh\""
+  local rc="$1" kind="$2"
+  local new_line legacy_line
+  if [[ "$kind" == "fish" ]]; then
+    new_line="source \"$HOME/.local/bin/cdx.fish\""
+    legacy_line=""
+    mkdir -p "$(dirname "$rc")"
+    [[ -f "$rc" ]] || : > "$rc"
+  else
+    new_line="source \"$HOME/.local/bin/cdx.sh\""
+    legacy_line="source \"${XDG_DATA_HOME:-$HOME/.local/share}/cdx/cdx.sh\""
+  fi
 
   # Migrate legacy source line if present
-  if grep -qF "$legacy_line" "$rc" 2>/dev/null; then
+  if [[ -n "$legacy_line" ]] && grep -qF "$legacy_line" "$rc" 2>/dev/null; then
     if _confirm "cdx: migrate old source line in $rc?"; then
       sed -i "s|$legacy_line|$new_line|" "$rc"
       echo "cdx: updated source line in $rc (migrated from old path)"
@@ -96,13 +119,27 @@ else
   echo "cdx: could not determine latest tag, using main"
 fi
 
-_download "$CDX_BASE/cdx.sh" "$CDX_BIN/cdx.sh"
+SHELL_KIND="$(_detect_shell_kind)"
+SHELL_RC="$(_detect_shell_rc)"
+echo "cdx: detected shell: $SHELL_KIND"
+
+if [[ "$SHELL_KIND" == "fish" ]]; then
+  HOOK_EXT="fish"
+  CORE_FILE="cdx.fish"
+  CONFIG_FILE="config.fish"
+else
+  HOOK_EXT="sh"
+  CORE_FILE="cdx.sh"
+  CONFIG_FILE="config.sh"
+fi
+
+_download "$CDX_BASE/$CORE_FILE" "$CDX_BIN/$CORE_FILE"
 
 for hook in preview git notify docker; do
-  _download "$CDX_BASE/hooks/${hook}.sh" "$CDX_CONFIG/hooks/${hook}.sh"
+  _download "$CDX_BASE/hooks/${hook}.${HOOK_EXT}" "$CDX_CONFIG/hooks/${hook}.${HOOK_EXT}"
 done
 
-_default_config() {
+_default_config_posix() {
   cat <<'CONFIG'
 # cdx config — edit to enable/disable hooks
 # Add custom hooks to ~/.config/cdx/hooks/ and list them here
@@ -110,35 +147,63 @@ CDX_HOOKS_ENABLED=(preview git)
 CONFIG
 }
 
-if [[ ! -f "$CDX_CONFIG/config.sh" ]]; then
-  _default_config > "$CDX_CONFIG/config.sh"
-  echo "cdx: created $CDX_CONFIG/config.sh"
-else
-  if _confirm "cdx: $CDX_CONFIG/config.sh already exists, overwrite?"; then
-    _default_config > "$CDX_CONFIG/config.sh"
-    echo "cdx: replaced $CDX_CONFIG/config.sh"
+_default_config_fish() {
+  cat <<'CONFIG'
+# cdx config — edit to enable/disable hooks
+# Add custom hooks to ~/.config/cdx/hooks/ and list them here
+set -g CDX_HOOKS_ENABLED preview git
+CONFIG
+}
+
+_write_default_config() {
+  if [[ "$SHELL_KIND" == "fish" ]]; then
+    _default_config_fish > "$1"
   else
-    echo "cdx: kept existing $CDX_CONFIG/config.sh"
+    _default_config_posix > "$1"
+  fi
+}
+
+CONFIG_PATH="$CDX_CONFIG/$CONFIG_FILE"
+if [[ ! -f "$CONFIG_PATH" ]]; then
+  _write_default_config "$CONFIG_PATH"
+  echo "cdx: created $CONFIG_PATH"
+else
+  if _confirm "cdx: $CONFIG_PATH already exists, overwrite?"; then
+    _write_default_config "$CONFIG_PATH"
+    echo "cdx: replaced $CONFIG_PATH"
+  else
+    echo "cdx: kept existing $CONFIG_PATH"
   fi
 fi
 
-SHELL_RC="$(_detect_shell_rc)"
-
-# Always install completions next to cdx.sh (auto-registration finds them here)
+# Install completions
 mkdir -p "$CDX_BIN/completions"
-_download "$CDX_BASE/completions/cdx.zsh" "$CDX_BIN/completions/cdx.zsh"
-_download "$CDX_BASE/completions/cdx.bash" "$CDX_BIN/completions/cdx.bash"
-
-# Also install to standard shell completion dirs if available
-if [[ -d "$HOME/.local/share/bash-completion/completions" ]]; then
-  cp "$CDX_BIN/completions/cdx.bash" \
-    "$HOME/.local/share/bash-completion/completions/cdx"
+if [[ "$SHELL_KIND" == "fish" ]]; then
+  # Fish autoloads from ~/.config/fish/completions/
+  FISH_COMP_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/fish/completions"
+  mkdir -p "$FISH_COMP_DIR"
+  _download "$CDX_BASE/completions/cdx.fish" "$FISH_COMP_DIR/cdx.fish"
+  # Also keep a copy alongside cdx.fish so the source line picks it up.
+  cp "$FISH_COMP_DIR/cdx.fish" "$CDX_BIN/completions/cdx.fish"
+else
+  _download "$CDX_BASE/completions/cdx.zsh" "$CDX_BIN/completions/cdx.zsh"
+  _download "$CDX_BASE/completions/cdx.bash" "$CDX_BIN/completions/cdx.bash"
+  if [[ -d "$HOME/.local/share/bash-completion/completions" ]]; then
+    cp "$CDX_BIN/completions/cdx.bash" \
+      "$HOME/.local/share/bash-completion/completions/cdx"
+  fi
 fi
 
-_patch_rc "$SHELL_RC"
+_patch_rc "$SHELL_RC" "$SHELL_KIND"
 
 echo ""
 echo "cdx installed."
-echo "Restart your shell or run: source $SHELL_RC"
-echo ""
-echo "To use cdx as cd: add 'alias cd=cdx' to $CDX_CONFIG/config.sh"
+if [[ "$SHELL_KIND" == "fish" ]]; then
+  echo "Restart your shell or run: source $SHELL_RC"
+  echo ""
+  echo "To use cdx as cd: add 'alias cd cdx' to $CONFIG_PATH"
+else
+  echo "Restart your shell or run: source $SHELL_RC"
+  echo ""
+  echo "To use cdx as cd: add 'alias cd=cdx' to $CONFIG_PATH"
+fi

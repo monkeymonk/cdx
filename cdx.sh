@@ -5,7 +5,7 @@ __CDX_HOOKS_SYNC=()
 __CDX_HOOKS_ASYNC=()
 __CDX_RESOLVER_ORDER=(zoxide zshz z zlua autojump)
 __CDX_RESOLVERS_CACHED=()
-__CDX_VERSION="0.2.8"
+__CDX_VERSION="0.3.0"
 __CDX_LOADED=1
 
 # Per-hook shell context: interactive (default), noninteractive, all

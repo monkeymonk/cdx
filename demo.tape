@@ -25,6 +25,9 @@ Set Framerate 60
 Hide
 Type `export PS1='$ '`
 Enter
+# Capture repo root before any cd (vhs launches the shell in the tape's directory)
+Type `CDX_REPO="$PWD"`
+Enter
 Type "export XDG_CONFIG_HOME=/tmp/alx-demo-vhs"
 Enter
 Type "rm -rf /tmp/alx-demo-vhs"
@@ -61,14 +64,14 @@ Type@0ms "cd /tmp/cdx-demo/projects/my-app && git init -q && git add -A && git c
 Enter
 Sleep 200ms
 
-# Source cdx and hooks
-Type@0ms "source /home/monkeymonk/works/tools/cdx/cdx.sh"
+# Source cdx and hooks (CDX_REPO captured in the first hidden block)
+Type@0ms `source "$CDX_REPO/cdx.sh"`
 Enter
 Sleep 200ms
-Type@0ms "source /home/monkeymonk/works/tools/cdx/hooks/preview.sh"
+Type@0ms `source "$CDX_REPO/hooks/preview.sh"`
 Enter
 Sleep 200ms
-Type@0ms "source /home/monkeymonk/works/tools/cdx/hooks/git.sh"
+Type@0ms `source "$CDX_REPO/hooks/git.sh"`
 Enter
 Sleep 200ms
 
